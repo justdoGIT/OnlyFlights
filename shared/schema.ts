@@ -14,9 +14,9 @@ export const bookings = pgTable("bookings", {
   userId: integer("user_id").references(() => users.id),
   type: text("type").notNull(), // flight, hotel
   itemId: integer("item_id").notNull(),
-  startDate: date("start_date").notNull(),
-  endDate: date("end_date").notNull(),
-  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+  totalPrice: text("total_price").notNull(),
   status: text("status").notNull(),
   details: text("details").notNull(),
   firstName: text("first_name").notNull(),
