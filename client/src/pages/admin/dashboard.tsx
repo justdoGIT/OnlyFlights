@@ -49,14 +49,13 @@ const AdminDashboard = () => {
   const [, navigate] = useLocation();
 
   // Optimized queries with proper types and caching
-  const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: ['/api/user'],
-    staleTime: 30000,
-    retry: 1,
-    onError: () => {
+  const { user, isLoading: userLoading } = useAuth();
+  
+  useEffect(() => {
+    if (!userLoading && (!user || !user.isAdmin)) {
       navigate('/auth');
     }
-  });
+  }, [user, userLoading, navigate]);
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
