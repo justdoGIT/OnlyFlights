@@ -1,7 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Hotel, Package } from "lucide-react";
+import { useLocation } from "wouter";
 
 export function Hero() {
+  const [, setLocation] = useLocation();
+
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+  };
+
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70" />
@@ -14,15 +21,30 @@ export function Hero() {
             Book flights, hotels, and holiday packages at the best prices. Start your journey with us today!
           </p>
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" variant="secondary" className="gap-2">
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="gap-2"
+              onClick={() => handleNavigation("/flights")}
+            >
               <PlaneTakeoff className="h-5 w-5" />
               Find Flights
             </Button>
-            <Button size="lg" variant="secondary" className="gap-2">
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="gap-2"
+              onClick={() => handleNavigation("/hotels")}
+            >
               <Hotel className="h-5 w-5" />
               Book Hotels
             </Button>
-            <Button size="lg" variant="secondary" className="gap-2">
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="gap-2"
+              onClick={() => handleNavigation("/packages")}
+            >
               <Package className="h-5 w-5" />
               View Packages
             </Button>
