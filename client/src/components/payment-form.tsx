@@ -14,6 +14,7 @@ import {
 import { Loader2, CreditCard } from "lucide-react";
 
 const paymentSchema = z.object({
+  cardholderName: z.string().min(1, "Cardholder name is required"),
   cardNumber: z.string().min(16, "Card number must be 16 digits").max(16),
   expiryDate: z.string().min(5, "Invalid expiry date").max(5),
   cvv: z.string().min(3, "CVV must be 3 digits").max(3),
@@ -23,19 +24,23 @@ type PaymentFormData = z.infer<typeof paymentSchema>;
 
 interface PaymentFormProps {
   amount: number;
+  totalTravelers?: number;
   onSubmit: (data: PaymentFormData) => Promise<void>;
   isSubmitting: boolean;
 }
 
-export function PaymentForm({ amount, onSubmit, isSubmitting }: PaymentFormProps) {
+export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting }: PaymentFormProps) {
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
+      cardholderName: "",
       cardNumber: "",
       expiryDate: "",
       cvv: "",
     },
   });
+
+  const total = amount * totalTravelers;
 
   return (
     <Form {...form}>
@@ -44,6 +49,23 @@ export function PaymentForm({ amount, onSubmit, isSubmitting }: PaymentFormProps
           <CreditCard className="h-5 w-5" />
           <h2 className="font-semibold">Payment Details</h2>
         </div>
+
+        <FormField
+          control={form.control}
+          name="cardholderName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cardholder Name</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="John Doe"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
@@ -125,6 +147,15 @@ export function PaymentForm({ amount, onSubmit, isSubmitting }: PaymentFormProps
           />
         </div>
 
+        {totalTravelers > 1 && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600">Price breakdown:</p>
+            <p className="text-sm text-gray-600">
+              ${amount} × {totalTravelers} travelers = ${total}
+            </p>
+          </div>
+        )}
+
         <Button
           type="submit"
           className="w-full"
@@ -136,7 +167,7 @@ export function PaymentForm({ amount, onSubmit, isSubmitting }: PaymentFormProps
               Processing...
             </>
           ) : (
-            `Pay $${amount}`
+            `Pay $${total}`
           )}
         </Button>
 

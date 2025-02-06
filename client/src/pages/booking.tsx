@@ -111,7 +111,7 @@ export default function BookingPage() {
         itemId: bookingDetails.id || 1,
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 86400000).toISOString(),
-        totalPrice: String(bookingDetails.price),
+        totalPrice: String(bookingDetails.price * bookingDetails.travelers),
         status: "confirmed",
         details: JSON.stringify({
           ...bookingDetails,
@@ -198,7 +198,9 @@ export default function BookingPage() {
                 <div>
                   <p>Flight from {bookingDetails.from} to {bookingDetails.to}</p>
                   <p>Date: {bookingDetails.departureTime}</p>
-                  <p className="font-semibold mt-2">Price: ${bookingDetails.price}</p>
+                  <p>Number of Travelers: {bookingDetails.travelers}</p>
+                  <p className="font-semibold mt-2">Price per person: ${bookingDetails.price}</p>
+                  <p className="font-semibold">Total price: ${bookingDetails.price * bookingDetails.travelers}</p>
                 </div>
               )}
               {bookingDetails.type === "hotel" && (
@@ -278,7 +280,8 @@ export default function BookingPage() {
               </Form>
             ) : (
               <PaymentForm 
-                amount={bookingDetails.price}
+                amount={bookingDetails.price * bookingDetails.travelers}
+                totalTravelers={bookingDetails.travelers}
                 onSubmit={onPaymentSubmit}
                 isSubmitting={isSubmitting}
               />
