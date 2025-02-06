@@ -17,6 +17,7 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentForm } from "@/components/payment-form";
+import { TravelerDetails } from "@/components/traveler-details";
 
 const bookingSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -34,6 +35,8 @@ export default function BookingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [showTravelerDetails, setShowTravelerDetails] = useState(false);
+  const [travelersData, setTravelersData] = useState<any>(null);
 
   useEffect(() => {
     const storedDetails = sessionStorage.getItem('bookingDetails');
@@ -41,6 +44,9 @@ export default function BookingPage() {
       try {
         const details = JSON.parse(storedDetails);
         setBookingDetails(details);
+        if (details.travelers > 1) {
+          setShowTravelerDetails(true);
+        }
         sessionStorage.removeItem('bookingDetails');
       } catch (error) {
         console.error('Failed to parse booking details:', error);
@@ -63,8 +69,18 @@ export default function BookingPage() {
     },
   });
 
-  const onBookingSubmit = async (data: BookingData) => {
+  const onTravelerDetailsSubmit = (data: any) => {
+    setTravelersData(data);
+    setShowTravelerDetails(false);
     setShowPayment(true);
+  };
+
+  const onBookingSubmit = async (data: BookingData) => {
+    if (bookingDetails?.travelers > 1 && !travelersData) {
+      setShowTravelerDetails(true);
+    } else {
+      setShowPayment(true);
+    }
   };
 
   const onPaymentSubmit = async (paymentData: any) => {
@@ -99,6 +115,7 @@ export default function BookingPage() {
         status: "confirmed",
         details: JSON.stringify({
           ...bookingDetails,
+          travelers: travelersData,
           price: String(bookingDetails.price)
         })
       };
@@ -146,6 +163,24 @@ export default function BookingPage() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (showTravelerDetails) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-6">
+              <h1 className="text-2xl font-bold mb-6">Traveler Details</h1>
+              <TravelerDetails
+                numberOfTravelers={bookingDetails.travelers}
+                onSubmit={onTravelerDetailsSubmit}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -237,7 +272,7 @@ export default function BookingPage() {
                   />
 
                   <Button type="submit" className="w-full">
-                    Proceed to Payment
+                    {bookingDetails.travelers > 1 ? "Add Traveler Details" : "Proceed to Payment"}
                   </Button>
                 </form>
               </Form>
