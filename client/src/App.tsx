@@ -13,6 +13,8 @@ import Hotels from "@/pages/hotels";
 import Packages from "@/pages/packages";
 import Contact from "@/pages/contact";
 import Auth from "@/pages/auth";
+import Booking from "@/pages/booking";
+import { ProtectedRoute } from "@/components/protected-route";
 
 function Router() {
   return (
@@ -23,6 +25,7 @@ function Router() {
       <Route path="/hotels" component={Hotels} />
       <Route path="/packages" component={Packages} />
       <Route path="/contact" component={Contact} />
+      <ProtectedRoute path="/booking" component={Booking} />
       <Route component={NotFound} />
     </Switch>
   );

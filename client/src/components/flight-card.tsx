@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Clock, Ban } from "lucide-react";
+import { useLocation } from "wouter";
 import type { Flight } from "@/data/flights";
 
 interface FlightCardProps {
@@ -8,6 +9,18 @@ interface FlightCardProps {
 }
 
 export function FlightCard({ flight }: FlightCardProps) {
+  const [, setLocation] = useLocation();
+
+  const handleBooking = () => {
+    // Pass flight details through history state
+    window.history.pushState(
+      { bookingDetails: { ...flight, type: "flight" } },
+      "",
+      "/booking"
+    );
+    setLocation("/booking");
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-6">
@@ -52,7 +65,7 @@ export function FlightCard({ flight }: FlightCardProps) {
               </>
             )}
           </div>
-          <Button>Select Flight</Button>
+          <Button onClick={handleBooking}>Book Now</Button>
         </div>
       </CardContent>
     </Card>

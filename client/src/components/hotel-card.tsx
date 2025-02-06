@@ -1,6 +1,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Star } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface HotelCardProps {
   image: string;
@@ -11,6 +12,18 @@ interface HotelCardProps {
 }
 
 export function HotelCard({ image, name, location, price, rating }: HotelCardProps) {
+  const [, setLocation] = useLocation();
+
+  const handleBooking = () => {
+    // Pass hotel details through history state
+    window.history.pushState(
+      { bookingDetails: { image, name, location, price, rating, type: "hotel" } },
+      "",
+      "/booking"
+    );
+    setLocation("/booking");
+  };
+
   return (
     <Card className="overflow-hidden">
       <div className="aspect-video relative">
@@ -37,7 +50,7 @@ export function HotelCard({ image, name, location, price, rating }: HotelCardPro
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full">Book Now</Button>
+        <Button className="w-full" onClick={handleBooking}>Book Now</Button>
       </CardFooter>
     </Card>
   );
