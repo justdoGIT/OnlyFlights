@@ -79,13 +79,15 @@ export default function BookingPage() {
         itemId: bookingDetails.id || 1,
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 86400000).toISOString(), // Next day
-        totalPrice: bookingDetails.price.toString(), // Convert to string
+        totalPrice: String(bookingDetails.price), // Ensure price is string
         status: "pending",
         details: JSON.stringify({
           ...bookingDetails,
-          price: bookingDetails.price.toString() // Ensure price is string in details
+          price: String(bookingDetails.price) // Ensure price is string in details
         })
       };
+
+      console.log('Submitting booking data:', bookingData); // Add logging
 
       const response = await fetch("/api/bookings", {
         method: "POST",
@@ -105,6 +107,7 @@ export default function BookingPage() {
 
       setLocation("/");
     } catch (error) {
+      console.error('Booking error:', error); // Add error logging
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create booking. Please try again.",
