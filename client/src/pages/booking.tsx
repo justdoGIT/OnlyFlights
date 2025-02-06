@@ -93,6 +93,12 @@ export default function BookingPage() {
 
   const onBookingSubmit = async (data: BookingData) => {
     setShowPayment(true);
+    // Reset payment form when showing payment view
+    paymentForm.reset({
+      cardNumber: '',
+      expiryDate: '',
+      cvv: ''
+    });
   };
 
   const onPaymentSubmit = async (paymentData: PaymentData) => {
@@ -280,11 +286,16 @@ export default function BookingPage() {
                         <FormLabel>Card Number</FormLabel>
                         <FormControl>
                           <Input 
-                            {...field}
-                            value={field.value}
-                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, '').slice(0, 16))}
                             placeholder="1234 5678 9012 4242"
                             maxLength={16}
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="cc-number"
+                            value={field.value}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              field.onChange(value);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -301,7 +312,11 @@ export default function BookingPage() {
                           <FormLabel>Expiry Date</FormLabel>
                           <FormControl>
                             <Input 
-                              {...field}
+                              placeholder="MM/YY"
+                              maxLength={5}
+                              type="text"
+                              inputMode="numeric"
+                              autoComplete="cc-exp"
                               value={field.value}
                               onChange={(e) => {
                                 let value = e.target.value.replace(/\D/g, '');
@@ -310,8 +325,6 @@ export default function BookingPage() {
                                 }
                                 field.onChange(value.slice(0, 5));
                               }}
-                              placeholder="MM/YY"
-                              maxLength={5}
                             />
                           </FormControl>
                           <FormMessage />
@@ -327,12 +340,16 @@ export default function BookingPage() {
                           <FormLabel>CVV</FormLabel>
                           <FormControl>
                             <Input 
-                              {...field}
-                              value={field.value}
-                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                              type="password"
                               placeholder="123"
                               maxLength={3}
+                              type="password"
+                              inputMode="numeric"
+                              autoComplete="cc-csc"
+                              value={field.value}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                field.onChange(value);
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
