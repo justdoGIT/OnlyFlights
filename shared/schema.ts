@@ -29,6 +29,16 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const enquiries = pgTable("enquiries", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
