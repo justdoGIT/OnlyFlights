@@ -28,6 +28,7 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <ProtectedRoute path="/booking" component={Booking} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/admin/*" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
