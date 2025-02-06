@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
+    mutationFn: async (credentials: InsertUser & { isAdmin?: boolean }) => {
       try {
         const res = await apiRequest("POST", "/api/register", credentials);
         if (!res.ok) {

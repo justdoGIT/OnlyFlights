@@ -23,7 +23,8 @@ export default function Auth() {
       if (isLogin) {
         await login(data);
       } else {
-        await register(data);
+        // Include isAdmin flag for registration
+        await register({ ...data, isAdmin: !isLogin });
       }
       toast({
         title: "Success",
