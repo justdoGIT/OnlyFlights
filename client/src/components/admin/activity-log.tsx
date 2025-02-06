@@ -9,12 +9,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import type { AdminLogEntry } from "@shared/types/admin";
+
+interface LogResponse {
+  logs: AdminLogEntry[];
+  hasMore: boolean;
+}
 
 export function AdminActivityLog() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<LogResponse>({
     queryKey: ["/api/admin/logs", page],
     queryFn: async () => {
       const response = await fetch(`/api/admin/logs?page=${page}&limit=${limit}`);
@@ -41,7 +47,7 @@ export function AdminActivityLog() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.logs.map((log: any) => (
+          {data?.logs.map((log) => (
             <TableRow key={log.id}>
               <TableCell>{log.adminId}</TableCell>
               <TableCell className="capitalize">{log.action.replace(/_/g, " ")}</TableCell>

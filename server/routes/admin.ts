@@ -1,11 +1,20 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { z } from "zod";
+import type { Request } from "express";
+import { adminStatsSchema } from "@shared/types/admin";
 
 const router = Router();
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: number;
+    isAdmin: boolean;
+  };
+}
+
 // Middleware to check if user is admin
-const isAdmin = (req: any, res: any, next: any) => {
+const isAdmin = (req: AuthenticatedRequest, res: any, next: any) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ message: "Unauthorized" });
   }
@@ -13,7 +22,7 @@ const isAdmin = (req: any, res: any, next: any) => {
 };
 
 // Get admin dashboard stats
-router.get("/stats", isAdmin, async (req, res) => {
+router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const [users, bookings, enquiries] = await Promise.all([
       storage.getAllUsers(),
@@ -28,7 +37,9 @@ router.get("/stats", isAdmin, async (req, res) => {
       totalRevenue: bookings.reduce((acc, booking) => acc + Number(booking.totalPrice), 0)
     };
 
-    res.json(stats);
+    // Validate stats before sending
+    const validatedStats = adminStatsSchema.parse(stats);
+    res.json(validatedStats);
   } catch (error) {
     console.error("Error fetching admin stats:", error);
     res.status(500).json({ message: "Failed to fetch admin stats" });
@@ -36,7 +47,7 @@ router.get("/stats", isAdmin, async (req, res) => {
 });
 
 // Get all users
-router.get("/users", isAdmin, async (req, res) => {
+router.get("/users", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const users = await storage.getAllUsers();
     res.json({ users });
@@ -47,7 +58,7 @@ router.get("/users", isAdmin, async (req, res) => {
 });
 
 // Update user role
-router.patch("/users/:id", isAdmin, async (req, res) => {
+router.patch("/users/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const id = Number(req.params.id);
     const isAdmin = z.boolean().parse(req.body.isAdmin);
@@ -56,7 +67,7 @@ router.patch("/users/:id", isAdmin, async (req, res) => {
 
     // Log admin action
     await storage.createAdminLog({
-      adminId: req.user.id,
+      adminId: req.user!.id, // Safe to use ! here as middleware ensures user exists
       action: "update_user_role",
       entityType: "users",
       entityId: id,
@@ -71,7 +82,7 @@ router.patch("/users/:id", isAdmin, async (req, res) => {
 });
 
 // Get paginated bookings
-router.get("/bookings", isAdmin, async (req, res) => {
+router.get("/bookings", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -88,7 +99,7 @@ router.get("/bookings", isAdmin, async (req, res) => {
 });
 
 // Update booking status
-router.patch("/bookings/:id", isAdmin, async (req, res) => {
+router.patch("/bookings/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const id = Number(req.params.id);
     const status = z.string().parse(req.body.status);
@@ -112,7 +123,7 @@ router.patch("/bookings/:id", isAdmin, async (req, res) => {
 });
 
 // Get paginated enquiries
-router.get("/enquiries", isAdmin, async (req, res) => {
+router.get("/enquiries", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -129,7 +140,7 @@ router.get("/enquiries", isAdmin, async (req, res) => {
 });
 
 // Update enquiry status
-router.patch("/enquiries/:id", isAdmin, async (req, res) => {
+router.patch("/enquiries/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const id = Number(req.params.id);
     const status = z.string().parse(req.body.status);
@@ -153,7 +164,7 @@ router.patch("/enquiries/:id", isAdmin, async (req, res) => {
 });
 
 // Get admin activity logs
-router.get("/logs", isAdmin, async (req, res) => {
+router.get("/logs", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;

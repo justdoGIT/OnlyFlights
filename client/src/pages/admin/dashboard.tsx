@@ -8,6 +8,7 @@ import { EnquiriesTable } from "@/components/admin/enquiries-table";
 import { UsersTable } from "@/components/admin/users-table";
 import { AdminActivityLog } from "@/components/admin/activity-log";
 import { useQuery } from "@tanstack/react-query";
+import type { AdminStats } from "@shared/types/admin";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -19,7 +20,7 @@ export default function AdminDashboard() {
     }
   }, [user, setLocation]);
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
   });
 
@@ -58,10 +59,10 @@ export default function AdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.totalRevenue || 0}</div>
+            <div className="text-2xl font-bold">${stats?.totalRevenue.toLocaleString() || 0}</div>
           </CardContent>
         </Card>
       </div>
