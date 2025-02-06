@@ -119,10 +119,14 @@ export function setupAuth(app: Express) {
       }
 
       const hashedPassword = await hashPassword(req.body.password);
+      // Allow admin registration if explicitly specified and no other admin exists
+      const isAdminRegistration = req.body.isAdmin === true;
+      const existingAdmins = await storage.getAdminUsers();
+      
       const user = await storage.createUser({
         ...req.body,
         password: hashedPassword,
-        isAdmin: false // Ensure regular users can't set themselves as admin
+        isAdmin: isAdminRegistration && existingAdmins.length === 0
       });
 
       req.login(user, (err) => {

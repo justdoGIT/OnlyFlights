@@ -13,6 +13,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUser(id: number, data: Partial<InsertUser>): Promise<User>;
+  getAdminUsers(): Promise<User[]>; // Added method
 
   // Booking operations
   createBooking(booking: InsertBooking): Promise<Booking>;
@@ -57,6 +58,11 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
+
+  async getAdminUsers(): Promise<User[]> { // Added method implementation
+    return await db.select().from(users).where(eq(users.isAdmin, true));
+  }
+
 
   // Booking operations
   async createBooking(booking: InsertBooking): Promise<Booking> {
