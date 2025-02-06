@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -8,10 +8,25 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { PlaneTakeoff, Hotel, Package, Phone } from "lucide-react";
+import { PlaneTakeoff, Hotel, Package, Phone, User } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Navbar() {
+  const { user, logoutMutation } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleLogout = async () => {
+    await logoutMutation.mutateAsync();
+    setLocation("/");
+  };
+
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -68,8 +83,30 @@ export function Navbar() {
         </NavigationMenu>
 
         <div className="flex gap-4">
-          <Button variant="outline">Sign In</Button>
-          <Button>Register</Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <User className="h-4 w-4" />
+                  {user.username}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link href="/auth">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+              <Link href="/auth">
+                <Button>Register</Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

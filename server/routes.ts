@@ -3,8 +3,12 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBookingSchema, insertEnquirySchema } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 export function registerRoutes(app: Express): Server {
+  // Set up authentication routes and middleware
+  setupAuth(app);
+
   app.post('/api/bookings', async (req, res) => {
     try {
       const booking = insertBookingSchema.parse(req.body);

@@ -5,17 +5,20 @@ import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ChatWidget } from "@/components/chat-widget";
+import { AuthProvider } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Flights from "@/pages/flights";
 import Hotels from "@/pages/hotels";
 import Packages from "@/pages/packages";
 import Contact from "@/pages/contact";
+import Auth from "@/pages/auth";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/auth" component={Auth} />
       <Route path="/flights" component={Flights} />
       <Route path="/hotels" component={Hotels} />
       <Route path="/packages" component={Packages} />
@@ -28,15 +31,17 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <Router />
-        </main>
-        <Footer />
-        <ChatWidget />
-      </div>
-      <Toaster />
+      <AuthProvider>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-1">
+            <Router />
+          </main>
+          <Footer />
+          <ChatWidget />
+        </div>
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
