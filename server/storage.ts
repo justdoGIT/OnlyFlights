@@ -4,7 +4,7 @@ import {
   enquiries, type Enquiry, type InsertEnquiry,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -20,8 +20,6 @@ export interface IStorage {
   getAllBookings(limit?: number, offset?: number): Promise<Booking[]>;
   updateBookingStatus(id: number, status: string): Promise<Booking>;
   getBooking(id: number): Promise<Booking | undefined>;
-  getBookingsCount():Promise<number>;
-
 
   // Enquiry operations
   createEnquiry(enquiry: InsertEnquiry): Promise<Enquiry>;
@@ -95,11 +93,6 @@ export class DatabaseStorage implements IStorage {
   async getBooking(id: number): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
     return booking;
-  }
-
-  async getBookingsCount(): Promise<number> {
-    const [{count: totalCount}] = await db.select({count: count(bookings.id)}).from(bookings);
-    return totalCount;
   }
 
   // Enquiry operations

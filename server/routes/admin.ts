@@ -4,46 +4,6 @@ import type { Request } from "express";
 
 const router = Router();
 
-// Get paginated bookings
-router.get("/bookings", isAdmin, async (req: AuthenticatedRequest, res) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const offset = (page - 1) * limit;
-
-    const [bookings, total] = await Promise.all([
-      storage.getBookings(limit, offset),
-      storage.getBookingsCount()
-    ]);
-
-    res.json({
-      bookings,
-      hasMore: total > page * limit
-    });
-  } catch (error) {
-    console.error("Error fetching bookings:", error);
-    res.status(500).json({ message: "Failed to fetch bookings" });
-  }
-});
-
-// Update booking status
-router.patch("/bookings/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    
-    if (!["confirmed", "cancelled", "pending"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
-    const booking = await storage.updateBookingStatus(parseInt(id), status);
-    res.json(booking);
-  } catch (error) {
-    console.error("Error updating booking:", error);
-    res.status(500).json({ message: "Failed to update booking" });
-  }
-});
-
 interface AuthenticatedRequest extends Request {
   user?: {
     id: number;
