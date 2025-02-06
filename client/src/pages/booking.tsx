@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PaymentForm } from "@/components/payment-form";
 import { TravelerDetails } from "@/components/traveler-details";
 
+// Main booker schema (the person making the booking)
 const bookingSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -36,8 +37,8 @@ export default function BookingPage() {
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [showTravelerDetails, setShowTravelerDetails] = useState(false);
-  const [travelersData, setTravelersData] = useState<any>(null);
-  const [bookingFormData, setBookingFormData] = useState<BookingData | null>(null);
+  const [mainBookerData, setMainBookerData] = useState<BookingData | null>(null);
+  const [additionalTravelersData, setAdditionalTravelersData] = useState<any[]>([]);
 
   useEffect(() => {
     const storedDetails = sessionStorage.getItem('bookingDetails');
@@ -68,14 +69,14 @@ export default function BookingPage() {
   });
 
   const onTravelerDetailsSubmit = (data: any) => {
-    setTravelersData(data);
+    setAdditionalTravelersData(data.travelers);
     setShowTravelerDetails(false);
     setShowPayment(true);
   };
 
   const onBookingSubmit = async (data: BookingData) => {
-    setBookingFormData(data);
-    if (bookingDetails?.travelers > 1 && !travelersData) {
+    setMainBookerData(data);
+    if (bookingDetails?.travelers > 1) {
       setShowTravelerDetails(true);
     } else {
       setShowPayment(true);
@@ -83,7 +84,7 @@ export default function BookingPage() {
   };
 
   const onPaymentSubmit = async (paymentData: any) => {
-    if (!bookingDetails || !bookingFormData) {
+    if (!bookingDetails || !mainBookerData) {
       toast({
         title: "Error",
         description: "Missing booking details",
@@ -102,9 +103,21 @@ export default function BookingPage() {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
+      // Prepare travelers data
+      const travelers = [
+        {
+          type: 'main_booker',
+          ...mainBookerData
+        },
+        ...(additionalTravelersData.map(traveler => ({
+          type: 'additional_traveler',
+          ...traveler
+        })))
+      ];
+
       // If payment successful, create booking
       const bookingData = {
-        ...bookingFormData,
+        ...mainBookerData,
         userId: user?.id,
         type: bookingDetails.type,
         itemId: bookingDetails.id || 1,
@@ -114,7 +127,7 @@ export default function BookingPage() {
         status: "confirmed",
         details: JSON.stringify({
           ...bookingDetails,
-          travelers: travelersData,
+          travelers,
           price: String(bookingDetails.price)
         })
       };
@@ -172,9 +185,14 @@ export default function BookingPage() {
         <div className="container mx-auto px-4">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-6">
-              <h1 className="text-2xl font-bold mb-6">Traveler Details</h1>
+              <h1 className="text-2xl font-bold mb-6">Additional Travelers</h1>
+              <div className="mb-4 p-4 bg-gray-100 rounded-lg">
+                <h2 className="font-semibold mb-2">Main Booker Details</h2>
+                <p>{mainBookerData?.firstName} {mainBookerData?.lastName}</p>
+                <p>{mainBookerData?.email}</p>
+              </div>
               <TravelerDetails
-                numberOfTravelers={bookingDetails.travelers}
+                numberOfTravelers={bookingDetails.travelers - 1} // Subtract 1 for main booker
                 onSubmit={onTravelerDetailsSubmit}
               />
             </CardContent>
@@ -214,6 +232,7 @@ export default function BookingPage() {
             {!showPayment ? (
               <Form {...bookingForm}>
                 <form onSubmit={bookingForm.handleSubmit(onBookingSubmit)} className="space-y-4">
+                  <h2 className="font-semibold">Main Booker Details</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={bookingForm.control}
@@ -273,7 +292,7 @@ export default function BookingPage() {
                   />
 
                   <Button type="submit" className="w-full">
-                    {bookingDetails.travelers > 1 ? "Add Traveler Details" : "Proceed to Payment"}
+                    {bookingDetails.travelers > 1 ? "Add Additional Travelers" : "Proceed to Payment"}
                   </Button>
                 </form>
               </Form>

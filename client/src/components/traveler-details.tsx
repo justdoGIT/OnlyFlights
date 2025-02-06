@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -46,80 +45,75 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Traveler Details</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {Array.from({ length: numberOfTravelers }).map((_, index) => (
-              <div key={index} className="space-y-4">
-                <h3 className="text-lg font-semibold">
-                  Traveler {index + 1}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`travelers.${index}.firstName`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`travelers.${index}.lastName`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`travelers.${index}.dateOfBirth`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date of Birth</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`travelers.${index}.passportNumber`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Passport Number</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {Array.from({ length: numberOfTravelers }).map((_, index) => (
+          <Card key={index} className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Additional Traveler {index + 1}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name={`travelers.${index}.firstName`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`travelers.${index}.lastName`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`travelers.${index}.dateOfBirth`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date of Birth</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`travelers.${index}.passportNumber`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Passport Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            ))}
-            <Button type="submit" className="w-full">
-              Continue to Payment
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+        ))}
+        <Button type="submit" className="w-full">
+          Continue to Payment
+        </Button>
+      </form>
+    </Form>
   );
 }
