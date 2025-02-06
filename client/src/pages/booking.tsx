@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,9 +31,14 @@ export default function BookingPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
 
-  // Get booking details from URL state
-  const bookingDetails = window.history.state?.bookingDetails;
+  useEffect(() => {
+    const state = window.history.state;
+    if (state?.bookingDetails) {
+      setBookingDetails(state.bookingDetails);
+    }
+  }, []);
 
   const form = useForm<BookingData>({
     resolver: zodResolver(bookingSchema),
@@ -74,7 +79,7 @@ export default function BookingPage() {
       });
 
       // Redirect to booking confirmation page
-      setLocation("/bookings/confirmation");
+      setLocation("/");
     } catch (error) {
       toast({
         title: "Error",
@@ -113,13 +118,14 @@ export default function BookingPage() {
 
             <div className="mb-8 p-4 bg-gray-100 rounded-lg">
               <h2 className="font-semibold mb-2">Booking Summary</h2>
-              {bookingDetails.type === "flight" ? (
+              {bookingDetails.type === "flight" && (
                 <div>
                   <p>Flight from {bookingDetails.from} to {bookingDetails.to}</p>
                   <p>Date: {bookingDetails.departureTime}</p>
                   <p className="font-semibold mt-2">Price: ${bookingDetails.price}</p>
                 </div>
-              ) : (
+              )}
+              {bookingDetails.type === "hotel" && (
                 <div>
                   <p>{bookingDetails.name}</p>
                   <p>Location: {bookingDetails.location}</p>

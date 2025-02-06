@@ -12,12 +12,9 @@ export function FlightCard({ flight }: FlightCardProps) {
   const [, setLocation] = useLocation();
 
   const handleBooking = () => {
-    // Pass flight details through history state
-    window.history.pushState(
-      { bookingDetails: { ...flight, type: "flight" } },
-      "",
-      "/booking"
-    );
+    // Set the booking details in the window.history.state
+    const state = { bookingDetails: { ...flight, type: "flight" } };
+    window.history.replaceState(state, "");
     setLocation("/booking");
   };
 
