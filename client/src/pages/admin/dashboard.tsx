@@ -7,6 +7,12 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { 
   ResizablePanelGroup,
   ResizablePanel,
@@ -94,27 +100,27 @@ export default function AdminDashboard() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <StatsCard 
                     title="Total Bookings" 
-                    value={stats?.totalBookings || "0"}
+                    value={String(stats?.totalBookings || 0)}
                     icon={<BarChart3 className="h-4 w-4" />}
                   />
                   <StatsCard 
                     title="Active Users" 
-                    value={stats?.activeUsers || "0"}
+                    value={String(stats?.activeUsers || 0)}
                     icon={<Users className="h-4 w-4" />}
                   />
                   <StatsCard 
-                    title="Pending Enquiries" 
-                    value={stats?.pendingEnquiries || "0"}
+                    title="Upcoming Bookings" 
+                    value={String(stats?.upcomingBookings || 0)}
                     icon={<MessageSquare className="h-4 w-4" />}
                   />
                   <StatsCard 
-                    title="Total Revenue" 
-                    value={`$${stats?.totalRevenue?.toLocaleString() || "0"}`}
+                    title="New Enquiries" 
+                    value={String(stats?.newEnquiries || 0)}
                     icon={<BarChart3 className="h-4 w-4" />}
                   />
                 </div>
 
-                {/* Main dashboard content will go here */}
+                {/* Main dashboard content */}
                 <div className="rounded-lg border bg-card p-6">
                   <Tabs defaultValue="bookings" className="space-y-4">
                     <TabsList>

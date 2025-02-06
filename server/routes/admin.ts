@@ -9,6 +9,7 @@ const router = Router();
 interface AuthenticatedRequest extends Request {
   user?: {
     id: number;
+    username: string;
     isAdmin: boolean;
   };
 }
@@ -33,8 +34,22 @@ router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
     const stats = {
       totalBookings: bookings.length,
       activeUsers: users.length,
-      pendingEnquiries: enquiries.filter(e => e.status === "new").length,
-      totalRevenue: bookings.reduce((acc, booking) => acc + Number(booking.totalPrice), 0)
+      upcomingBookings: bookings.filter(b => new Date(b.startDate) > new Date()).length,
+      newEnquiries: enquiries.filter(e => e.status === "new").length,
+      recentActivity: [
+        ...bookings.map(b => ({
+          id: b.id,
+          type: "booking" as const,
+          action: `New booking by ${b.firstName} ${b.lastName}`,
+          timestamp: b.createdAt
+        })),
+        ...enquiries.map(e => ({
+          id: e.id,
+          type: "enquiry" as const,
+          action: `New enquiry from ${e.name}`,
+          timestamp: e.createdAt
+        }))
+      ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 5)
     };
 
     // Validate stats before sending
@@ -67,7 +82,7 @@ router.patch("/users/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
 
     // Log admin action
     await storage.createAdminLog({
-      adminId: req.user!.id, // Safe to use ! here as middleware ensures user exists
+      adminId: req.user!.id,
       action: "update_user_role",
       entityType: "users",
       entityId: id,
