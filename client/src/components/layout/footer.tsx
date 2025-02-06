@@ -8,7 +8,7 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">About Us</h3>
             <p className="text-sm text-gray-600">
-              HappyFares is your trusted partner for booking flights, hotels, and holiday packages worldwide.
+              OnlyFlights is your trusted partner for booking flights, hotels, and holiday packages worldwide.
             </p>
           </div>
 
@@ -31,7 +31,7 @@ export function Footer() {
               </li>
               <li className="flex items-center text-sm text-gray-600">
                 <Mail className="h-4 w-4 mr-2" />
-                support@happyfares.com
+                support@onlyflights.com
               </li>
             </ul>
           </div>
@@ -53,7 +53,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-gray-600">
-          <p>&copy; {new Date().getFullYear()} HappyFares. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} OnlyFlights. All rights reserved.</p>
         </div>
       </div>
     </footer>
