@@ -20,7 +20,7 @@ interface EmailOptions {
 export async function sendEmail({ to, subject, html }: EmailOptions) {
   try {
     const info = await transporter.sendMail({
-      from: `"HappyFares" <${process.env.EMAIL_USER}>`,
+      from: `"OnlyFlights" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
@@ -35,7 +35,7 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
 
 export function generateBookingConfirmationEmail(booking: any) {
   const bookingDetails = JSON.parse(booking.details);
-  
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #0066cc; text-align: center;">Booking Confirmation</h1>
@@ -61,7 +61,7 @@ export function generateBookingConfirmationEmail(booking: any) {
         <p><strong>Total Price:</strong> $${booking.totalPrice}</p>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">
-        <p>Thank you for choosing HappyFares!</p>
+        <p>Thank you for choosing OnlyFlights!</p>
         <p>If you have any questions, please contact our support team.</p>
       </div>
     </div>
