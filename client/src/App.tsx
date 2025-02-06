@@ -14,6 +14,7 @@ import Packages from "@/pages/packages";
 import Contact from "@/pages/contact";
 import Auth from "@/pages/auth";
 import Booking from "@/pages/booking";
+import Dashboard from "@/pages/dashboard";
 import { ProtectedRoute } from "@/components/protected-route";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/packages" component={Packages} />
       <Route path="/contact" component={Contact} />
       <ProtectedRoute path="/booking" component={Booking} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -36,7 +38,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen flex flex-col">
-          <Navbar />
+          <Navbar items={[{href: '/dashboard', label: 'Dashboard'}]} /> {/* Added dashboard link */}
           <main className="flex-1">
             <Router />
           </main>

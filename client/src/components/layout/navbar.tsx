@@ -92,6 +92,11 @@ export function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <Link href="/dashboard">
+                  <DropdownMenuItem className="cursor-pointer">
+                    Dashboard
+                  </DropdownMenuItem>
+                </Link>
                 <DropdownMenuItem onClick={handleLogout}>
                   Logout
                 </DropdownMenuItem>
