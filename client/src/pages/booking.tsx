@@ -72,31 +72,39 @@ export default function BookingPage() {
 
     setIsSubmitting(true);
     try {
+      const bookingData = {
+        ...data,
+        userId: user?.id,
+        type: bookingDetails.type,
+        itemId: bookingDetails.id || 1,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 86400000).toISOString(), // Next day
+        totalPrice: bookingDetails.price,
+        status: "pending",
+        details: JSON.stringify(bookingDetails)
+      };
+
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          userId: user?.id,
-          type: bookingDetails.type,
-          itemId: bookingDetails.id,
-          status: "pending",
-        }),
+        body: JSON.stringify(bookingData),
       });
 
-      if (!response.ok) throw new Error("Failed to create booking");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create booking");
+      }
 
       toast({
         title: "Success",
         description: "Your booking has been confirmed!",
       });
 
-      // Redirect to home page
       setLocation("/");
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create booking. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create booking. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -12,12 +12,17 @@ export const users = pgTable("users", {
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  type: text("type").notNull(), // flight, hotel, package
+  type: text("type").notNull(), // flight, hotel
+  itemId: integer("item_id"),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   totalPrice: decimal("total_price").notNull(),
   status: text("status").notNull(),
   details: text("details").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
 });
 
 export const enquiries = pgTable("enquiries", {
@@ -37,11 +42,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertBookingSchema = createInsertSchema(bookings).pick({
   userId: true,
   type: true,
+  itemId: true,
   startDate: true,
   endDate: true,
   totalPrice: true,
   status: true,
   details: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
 });
 
 export const insertEnquirySchema = createInsertSchema(enquiries).pick({
