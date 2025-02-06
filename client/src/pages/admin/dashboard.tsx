@@ -1,6 +1,7 @@
-import { Suspense, lazy, useEffect, useMemo, useCallback } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   ResizablePanelGroup,
   ResizablePanel,
@@ -64,11 +65,7 @@ const AdminDashboard = () => {
     retry: 2
   });
 
-  useEffect(() => {
-    if (!userLoading && (!user || !user.isAdmin)) {
-      navigate('/');
-    }
-  }, [user, userLoading, navigate]);
+  // Effect already handled by ProtectedRoute
 
   // Memoize navigation handlers
   const handleNavigation = useCallback((route: string) => {

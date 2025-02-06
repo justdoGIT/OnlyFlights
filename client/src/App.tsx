@@ -15,6 +15,7 @@ import Contact from "@/pages/contact";
 import Auth from "@/pages/auth";
 import Booking from "@/pages/booking";
 import Dashboard from "@/pages/dashboard";
+import AdminDashboard from "@/pages/admin/dashboard";
 import { ProtectedRoute } from "@/components/protected-route";
 
 function Router() {
