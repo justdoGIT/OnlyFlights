@@ -37,6 +37,7 @@ export default function BookingPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [showTravelerDetails, setShowTravelerDetails] = useState(false);
   const [travelersData, setTravelersData] = useState<any>(null);
+  const [bookingFormData, setBookingFormData] = useState<BookingData | null>(null);
 
   useEffect(() => {
     const storedDetails = sessionStorage.getItem('bookingDetails');
@@ -44,9 +45,6 @@ export default function BookingPage() {
       try {
         const details = JSON.parse(storedDetails);
         setBookingDetails(details);
-        if (details.travelers > 1) {
-          setShowTravelerDetails(true);
-        }
         sessionStorage.removeItem('bookingDetails');
       } catch (error) {
         console.error('Failed to parse booking details:', error);
@@ -76,6 +74,7 @@ export default function BookingPage() {
   };
 
   const onBookingSubmit = async (data: BookingData) => {
+    setBookingFormData(data);
     if (bookingDetails?.travelers > 1 && !travelersData) {
       setShowTravelerDetails(true);
     } else {
@@ -84,10 +83,10 @@ export default function BookingPage() {
   };
 
   const onPaymentSubmit = async (paymentData: any) => {
-    if (!bookingDetails) {
+    if (!bookingDetails || !bookingFormData) {
       toast({
         title: "Error",
-        description: "No booking details found",
+        description: "Missing booking details",
         variant: "destructive",
       });
       return;
@@ -105,7 +104,7 @@ export default function BookingPage() {
 
       // If payment successful, create booking
       const bookingData = {
-        ...bookingForm.getValues(),
+        ...bookingFormData,
         userId: user?.id,
         type: bookingDetails.type,
         itemId: bookingDetails.id || 1,

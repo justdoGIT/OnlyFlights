@@ -40,8 +40,6 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
     },
   });
 
-  const total = amount * totalTravelers;
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -151,7 +149,7 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">Price breakdown:</p>
             <p className="text-sm text-gray-600">
-              ${amount} × {totalTravelers} travelers = ${total}
+              ${amount/totalTravelers} × {totalTravelers} travelers = ${amount}
             </p>
           </div>
         )}
@@ -167,7 +165,7 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
               Processing...
             </>
           ) : (
-            `Pay $${total}`
+            `Pay $${amount}`
           )}
         </Button>
 
