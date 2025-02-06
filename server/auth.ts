@@ -91,6 +91,28 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      // Validate required fields
+      if (!req.body.username || !req.body.password || !req.body.email) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      // Check username format
+      if (!/^[a-zA-Z0-9_]{3,20}$/.test(req.body.username)) {
+        return res.status(400).json({ 
+          message: "Username must be 3-20 characters and contain only letters, numbers and underscores" 
+        });
+      }
+
+      // Check email format
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      // Check password strength
+      if (req.body.password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
@@ -99,7 +121,8 @@ export function setupAuth(app: Express) {
       const hashedPassword = await hashPassword(req.body.password);
       const user = await storage.createUser({
         ...req.body,
-        password: hashedPassword
+        password: hashedPassword,
+        isAdmin: false // Ensure regular users can't set themselves as admin
       });
 
       req.login(user, (err) => {
@@ -107,7 +130,8 @@ export function setupAuth(app: Express) {
         res.status(201).json(user);
       });
     } catch (err) {
-      next(err);
+      console.error("Registration error:", err);
+      res.status(500).json({ message: "Registration failed" });
     }
   });
 
