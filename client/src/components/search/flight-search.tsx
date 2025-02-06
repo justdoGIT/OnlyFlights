@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TravelerDetails } from "@/components/traveler-details";
 import {
   Command,
   CommandEmpty,
@@ -39,6 +40,8 @@ export function FlightSearch() {
   const [selectedAirline, setSelectedAirline] = useState<string>("any");
   const [maxStops, setMaxStops] = useState<string>("any");
   const [showFilters, setShowFilters] = useState(false);
+  const [showTravelerDetails, setShowTravelerDetails] = useState(false);
+  const [travelersData, setTravelersData] = useState<any>(null);
 
   const airlines = useMemo(() => {
     return Array.from(new Set(flights.map(flight => flight.airline)));
@@ -54,7 +57,28 @@ export function FlightSearch() {
 
   const [searchResults, setSearchResults] = useState(flights);
 
+  const handleTravelersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 1;
+    setTravelers(value);
+    if (value > 1) {
+      setShowTravelerDetails(true);
+    } else {
+      setShowTravelerDetails(false);
+    }
+  };
+
+  const handleTravelerDetailsSubmit = (data: any) => {
+    setTravelersData(data);
+    setShowTravelerDetails(false);
+    handleSearch();
+  };
+
   const handleSearch = () => {
+    if (travelers > 1 && !travelersData) {
+      setShowTravelerDetails(true);
+      return;
+    }
+
     const results = flights.filter(flight => {
       const matchesRoute = (!from || flight.from.toLowerCase().includes(from.toLowerCase())) &&
         (!to || flight.to.toLowerCase().includes(to.toLowerCase()));
@@ -237,81 +261,92 @@ export function FlightSearch() {
                   min="1"
                   max="9"
                   value={travelers}
-                  onChange={(e) => setTravelers(parseInt(e.target.value) || 1)}
+                  onChange={handleTravelersChange}
                   className="h-10"
                 />
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              {showFilters ? "Hide Filters" : "Show Filters"}
-            </Button>
+            {!showTravelerDetails && (
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="mr-2 h-4 w-4" />
+                  {showFilters ? "Hide Filters" : "Show Filters"}
+                </Button>
 
-            {showFilters && (
-              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <Label>Price Range (${priceRange[0]} - ${priceRange[1]})</Label>
-                  <Slider
-                    min={0}
-                    max={maxPrice}
-                    step={50}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="mt-2"
-                  />
-                </div>
+                {showFilters && (
+                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <Label>Price Range (${priceRange[0]} - ${priceRange[1]})</Label>
+                      <Slider
+                        min={0}
+                        max={maxPrice}
+                        step={50}
+                        value={priceRange}
+                        onValueChange={setPriceRange}
+                        className="mt-2"
+                      />
+                    </div>
 
-                <div>
-                  <Label>Airline</Label>
-                  <Select
-                    value={selectedAirline}
-                    onValueChange={setSelectedAirline}
-                  >
-                    <SelectTrigger className="w-full mt-2">
-                      <SelectValue placeholder="Any Airline" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any Airline</SelectItem>
-                      {airlines.map((airline) => (
-                        <SelectItem key={airline} value={airline}>
-                          {airline}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div>
+                      <Label>Airline</Label>
+                      <Select
+                        value={selectedAirline}
+                        onValueChange={setSelectedAirline}
+                      >
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue placeholder="Any Airline" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any Airline</SelectItem>
+                          {airlines.map((airline) => (
+                            <SelectItem key={airline} value={airline}>
+                              {airline}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div>
-                  <Label>Maximum Stops</Label>
-                  <Select value={maxStops} onValueChange={setMaxStops}>
-                    <SelectTrigger className="w-full mt-2">
-                      <SelectValue placeholder="Any number of stops" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any number of stops</SelectItem>
-                      <SelectItem value="0">Non-stop only</SelectItem>
-                      <SelectItem value="1">1 stop or less</SelectItem>
-                      <SelectItem value="2+">2+ stops</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                    <div>
+                      <Label>Maximum Stops</Label>
+                      <Select value={maxStops} onValueChange={setMaxStops}>
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue placeholder="Any number of stops" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any number of stops</SelectItem>
+                          <SelectItem value="0">Non-stop only</SelectItem>
+                          <SelectItem value="1">1 stop or less</SelectItem>
+                          <SelectItem value="2+">2+ stops</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                <Button className="w-full" size="lg" onClick={handleSearch}>
+                  <PlaneTakeoff className="mr-2 h-5 w-5" />
+                  Search Flights
+                </Button>
+              </>
             )}
-
-            <Button className="w-full" size="lg" onClick={handleSearch}>
-              <PlaneTakeoff className="mr-2 h-5 w-5" />
-              Search Flights
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {showResults && (
+      {showTravelerDetails && (
+        <TravelerDetails
+          numberOfTravelers={travelers}
+          onSubmit={handleTravelerDetailsSubmit}
+        />
+      )}
+
+      {showResults && !showTravelerDetails && (
         <div className="mt-8 space-y-4 max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Available Flights</h2>
