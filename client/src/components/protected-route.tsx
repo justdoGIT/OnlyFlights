@@ -11,7 +11,7 @@ export function ProtectedRoute({
 }) {
   const { user, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
-  const isAdminRoute = location.startsWith('/admin');
+  const isAdminRoute = path.startsWith('/admin');
 
   return (
     <Route path={path}>

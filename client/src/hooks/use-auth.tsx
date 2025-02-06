@@ -31,14 +31,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     onError: (err) => {
-      // Handle errors more robustly, potentially logging the error or displaying a more specific message.
       console.error("Error fetching user data:", err);
-      // Set user to null on any error, this should trigger appropriate UI updates.
       queryClient.setQueryData(["/api/user"], null);
+      return null;
     },
+    retry: false,
     onSuccess: (data) => {
-      // Explicitly set user data on success
-      //queryClient.setQueryData(["/api/user"], data);  // Already handled by useQuery
     },
   });
 
