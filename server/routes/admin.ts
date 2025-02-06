@@ -46,17 +46,17 @@ router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
     const currentYear = new Date().getFullYear();
 
     const stats = {
-      totalUsers: users.length,
-      activeBookings: bookings.filter(b => b.status === "active").length,
-      newEnquiries: enquiries.filter(e => e.status === "new").length,
+      totalUsers: users?.length || 0,
+      activeBookings: bookings?.filter(b => b.status === "active")?.length || 0,
+      newEnquiries: enquiries?.filter(e => e.status === "new")?.length || 0,
       monthlyRevenue: bookings
-        .filter(b => {
+        ?.filter(b => {
           const bookingDate = new Date(b.createdAt);
           return bookingDate.getMonth() === currentMonth && 
                  bookingDate.getFullYear() === currentYear;
         })
-        .reduce((sum, booking) => sum + parseFloat(booking.totalPrice), 0)
-        .toFixed(2)
+        ?.reduce((sum, booking) => sum + (parseFloat(booking.totalPrice) || 0), 0)
+        ?.toFixed(2) || "0.00"
     };
 
     // Update cache

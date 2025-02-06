@@ -50,9 +50,12 @@ const AdminDashboard = () => {
 
   // Optimized queries with proper types and caching
   const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: ['/api/auth/me'],
+    queryKey: ['/api/user'],
     staleTime: 30000,
-    retry: 1
+    retry: 1,
+    onError: () => {
+      navigate('/auth');
+    }
   });
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
