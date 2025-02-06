@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,16 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlaneTakeoff, Check } from "lucide-react";
+import { Calendar as CalendarIcon, PlaneTakeoff, Check, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { flights, popularCities } from "@/data/flights";
 import { FlightCard } from "@/components/flight-card";
@@ -26,15 +34,45 @@ export function FlightSearch() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [selectedAirline, setSelectedAirline] = useState<string>("");
+  const [maxStops, setMaxStops] = useState<string>("any");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Get unique airlines and price range from flights data
+  const airlines = useMemo(() => {
+    return Array.from(new Set(flights.map(flight => flight.airline)));
+  }, []);
+
+  const maxPrice = useMemo(() => {
+    return Math.max(...flights.map(flight => flight.price));
+  }, []);
+
+  // Update price range initial state
+  useState(() => {
+    setPriceRange([0, maxPrice]);
+  }, [maxPrice]);
+
   const [searchResults, setSearchResults] = useState(flights);
 
   const handleSearch = () => {
-    // Filter flights based on search criteria
-    const results = flights.filter(
-      flight => 
-        (!from || flight.from.toLowerCase().includes(from.toLowerCase())) &&
-        (!to || flight.to.toLowerCase().includes(to.toLowerCase()))
-    );
+    // Filter flights based on all search criteria
+    const results = flights.filter(flight => {
+      const matchesRoute = (!from || flight.from.toLowerCase().includes(from.toLowerCase())) &&
+        (!to || flight.to.toLowerCase().includes(to.toLowerCase()));
+
+      const matchesPrice = flight.price >= priceRange[0] && flight.price <= priceRange[1];
+
+      const matchesAirline = !selectedAirline || flight.airline === selectedAirline;
+
+      const matchesStops = maxStops === "any" || 
+        (maxStops === "0" && flight.stops === 0) ||
+        (maxStops === "1" && flight.stops <= 1) ||
+        (maxStops === "2+" && flight.stops >= 2);
+
+      return matchesRoute && matchesPrice && matchesAirline && matchesStops;
+    });
+
     setSearchResults(results);
     setShowResults(true);
   };
@@ -194,6 +232,68 @@ export function FlightSearch() {
             )}
           </div>
 
+          <div className="mt-6">
+            <Button 
+              variant="outline" 
+              className="w-full mb-4"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              {showFilters ? "Hide Filters" : "Show Filters"}
+            </Button>
+
+            {showFilters && (
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <Label>Price Range (${priceRange[0]} - ${priceRange[1]})</Label>
+                  <Slider
+                    min={0}
+                    max={maxPrice}
+                    step={50}
+                    value={priceRange}
+                    onValueChange={setPriceRange}
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label>Airline</Label>
+                  <Select
+                    value={selectedAirline}
+                    onValueChange={setSelectedAirline}
+                  >
+                    <SelectTrigger className="w-full mt-2">
+                      <SelectValue placeholder="Any Airline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any Airline</SelectItem>
+                      {airlines.map((airline) => (
+                        <SelectItem key={airline} value={airline}>
+                          {airline}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Maximum Stops</Label>
+                  <Select value={maxStops} onValueChange={setMaxStops}>
+                    <SelectTrigger className="w-full mt-2">
+                      <SelectValue placeholder="Any number of stops" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any number of stops</SelectItem>
+                      <SelectItem value="0">Non-stop only</SelectItem>
+                      <SelectItem value="1">1 stop or less</SelectItem>
+                      <SelectItem value="2+">2+ stops</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+
           <Button className="w-full mt-6" size="lg" onClick={handleSearch}>
             <PlaneTakeoff className="mr-2 h-5 w-5" />
             Search Flights
@@ -203,7 +303,12 @@ export function FlightSearch() {
 
       {showResults && (
         <div className="mt-8 space-y-4 max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-4">Available Flights</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Available Flights</h2>
+            <p className="text-sm text-gray-500">
+              {searchResults.length} {searchResults.length === 1 ? 'flight' : 'flights'} found
+            </p>
+          </div>
           {searchResults.length > 0 ? (
             searchResults.map((flight) => (
               <FlightCard key={flight.id} flight={flight} />
