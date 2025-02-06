@@ -9,10 +9,10 @@ import type { Booking } from "@shared/schema";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  
+
   const { data: bookings, isLoading } = useQuery<Booking[]>({
-    queryKey: ['/api/bookings', user?.id],
-    enabled: !!user,
+    queryKey: ['/api/bookings'],
+    enabled: !!user
   });
 
   if (!user) return null;
@@ -21,7 +21,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold mb-8">My Dashboard</h1>
-        
+
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>

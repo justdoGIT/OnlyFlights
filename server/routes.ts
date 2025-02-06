@@ -24,10 +24,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get('/api/bookings/:userId', async (req, res) => {
+  app.get('/api/bookings', async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
-      const bookings = await storage.getBookingsByUser(userId);
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+      const bookings = await storage.getBookingsByUser(req.user.id);
       res.json(bookings);
     } catch (err) {
       console.error('Error fetching bookings:', err);
