@@ -20,14 +20,30 @@ const isAdmin = (req: AuthenticatedRequest, res: any, next: any) => {
   next();
 };
 
-// Get admin dashboard stats
+// Cache for stats data (5 minutes expiry)
+let statsCache: any = null;
+let statsCacheTime: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Get admin dashboard stats with caching
 router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
+    const now = Date.now();
+
+    // Return cached data if valid
+    if (statsCache && (now - statsCacheTime) < CACHE_DURATION) {
+      return res.json(statsCache);
+    }
+
+    // Fetch new data with optimized queries
     const [users, bookings, enquiries] = await Promise.all([
       storage.getAllUsers(),
-      storage.getAllBookings(),
-      storage.getAllEnquiries()
+      storage.getAllBookings(100), // Limit to recent bookings
+      storage.getAllEnquiries(50)  // Limit to recent enquiries
     ]);
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
 
     const stats = {
       totalUsers: users.length,
@@ -36,13 +52,16 @@ router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
       monthlyRevenue: bookings
         .filter(b => {
           const bookingDate = new Date(b.createdAt);
-          const now = new Date();
-          return bookingDate.getMonth() === now.getMonth() && 
-                 bookingDate.getFullYear() === now.getFullYear();
+          return bookingDate.getMonth() === currentMonth && 
+                 bookingDate.getFullYear() === currentYear;
         })
         .reduce((sum, booking) => sum + parseFloat(booking.totalPrice), 0)
         .toFixed(2)
     };
+
+    // Update cache
+    statsCache = stats;
+    statsCacheTime = now;
 
     res.json(stats);
   } catch (error) {

@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useNavigate } from "wouter";
+import { useEffect, useMemo, useCallback } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { 
   ResizablePanelGroup,
@@ -15,12 +15,35 @@ import {
   BarChart3
 } from "lucide-react";
 
-const AdminDashboard = () => {
-  const navigate = useNavigate();
+// Memoized stat card component
+const StatCard = React.memo(({ icon: Icon, label, value }: { 
+  icon: any, 
+  label: string, 
+  value: string | number 
+}) => (
+  <Card className="p-4 flex items-center space-x-4">
+    <Icon className="w-8 h-8 text-primary" />
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <h3 className="text-2xl font-bold">{value}</h3>
+    </div>
+  </Card>
+));
 
-  // Fetch user data to check admin status
+const AdminDashboard = () => {
+  const [, navigate] = useLocation();
+
+  // Fetch user data with stale time to prevent unnecessary refetches
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['/api/auth/me'],
+    staleTime: 30000, // Consider data fresh for 30 seconds
+  });
+
+  // Fetch stats with automatic background updates
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/admin/stats'],
+    staleTime: 60000, // Consider data fresh for 1 minute
+    refetchInterval: 300000, // Refetch every 5 minutes
   });
 
   useEffect(() => {
@@ -28,6 +51,19 @@ const AdminDashboard = () => {
       navigate('/');
     }
   }, [user, userLoading, navigate]);
+
+  // Memoize navigation handlers
+  const handleNavigation = useCallback((route: string) => {
+    navigate(`/admin/${route}`);
+  }, [navigate]);
+
+  // Memoize stats data to prevent unnecessary re-renders
+  const statsData = useMemo(() => ({
+    totalUsers: stats?.totalUsers ?? 'Loading...',
+    activeBookings: stats?.activeBookings ?? 'Loading...',
+    newEnquiries: stats?.newEnquiries ?? 'Loading...',
+    monthlyRevenue: stats?.monthlyRevenue ? `$${stats.monthlyRevenue}` : 'Loading...'
+  }), [stats]);
 
   if (userLoading) {
     return <div className="p-4"><Skeleton className="h-[400px]" /></div>;
@@ -39,34 +75,10 @@ const AdminDashboard = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 flex items-center space-x-4">
-          <Users className="w-8 h-8 text-primary" />
-          <div>
-            <p className="text-sm text-muted-foreground">Total Users</p>
-            <h3 className="text-2xl font-bold">Loading...</h3>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center space-x-4">
-          <CalendarDays className="w-8 h-8 text-primary" />
-          <div>
-            <p className="text-sm text-muted-foreground">Active Bookings</p>
-            <h3 className="text-2xl font-bold">Loading...</h3>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center space-x-4">
-          <MessagesSquare className="w-8 h-8 text-primary" />
-          <div>
-            <p className="text-sm text-muted-foreground">New Enquiries</p>
-            <h3 className="text-2xl font-bold">Loading...</h3>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center space-x-4">
-          <BarChart3 className="w-8 h-8 text-primary" />
-          <div>
-            <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-            <h3 className="text-2xl font-bold">Loading...</h3>
-          </div>
-        </Card>
+        <StatCard icon={Users} label="Total Users" value={statsData.totalUsers} />
+        <StatCard icon={CalendarDays} label="Active Bookings" value={statsData.activeBookings} />
+        <StatCard icon={MessagesSquare} label="New Enquiries" value={statsData.newEnquiries} />
+        <StatCard icon={BarChart3} label="Monthly Revenue" value={statsData.monthlyRevenue} />
       </div>
 
       {/* Main Content Area */}
@@ -75,18 +87,15 @@ const AdminDashboard = () => {
           <div className="flex flex-col h-full p-4">
             <h2 className="text-lg font-semibold mb-4">Navigation</h2>
             <nav className="space-y-2">
-              <button className="w-full text-left px-4 py-2 rounded hover:bg-accent">
-                Dashboard
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded hover:bg-accent">
-                Users
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded hover:bg-accent">
-                Bookings
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded hover:bg-accent">
-                Enquiries
-              </button>
+              {['dashboard', 'users', 'bookings', 'enquiries'].map((route) => (
+                <button
+                  key={route}
+                  onClick={() => handleNavigation(route)}
+                  className="w-full text-left px-4 py-2 rounded hover:bg-accent capitalize"
+                >
+                  {route}
+                </button>
+              ))}
             </nav>
           </div>
         </ResizablePanel>
@@ -97,7 +106,11 @@ const AdminDashboard = () => {
           <div className="p-4">
             <Card className="p-4">
               <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-              <p className="text-muted-foreground">No recent activity to display</p>
+              {statsLoading ? (
+                <Skeleton className="h-[200px]" />
+              ) : (
+                <p className="text-muted-foreground">No recent activity to display</p>
+              )}
             </Card>
           </div>
         </ResizablePanel>
