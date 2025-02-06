@@ -35,7 +35,7 @@ export function FlightSearch() {
   const [to, setTo] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 1000]);
-  const [selectedAirline, setSelectedAirline] = useState<string>("");
+  const [selectedAirline, setSelectedAirline] = useState<string>("any");
   const [maxStops, setMaxStops] = useState<string>("any");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -63,7 +63,7 @@ export function FlightSearch() {
 
       const matchesPrice = flight.price >= priceRange[0] && flight.price <= priceRange[1];
 
-      const matchesAirline = !selectedAirline || flight.airline === selectedAirline;
+      const matchesAirline = selectedAirline === "any" || flight.airline === selectedAirline;
 
       const matchesStops = maxStops === "any" || 
         (maxStops === "0" && flight.stops === 0) ||
@@ -266,7 +266,7 @@ export function FlightSearch() {
                       <SelectValue placeholder="Any Airline" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any Airline</SelectItem>
+                      <SelectItem value="any">Any Airline</SelectItem>
                       {airlines.map((airline) => (
                         <SelectItem key={airline} value={airline}>
                           {airline}
