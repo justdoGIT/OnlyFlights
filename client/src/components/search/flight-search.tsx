@@ -40,7 +40,6 @@ export function FlightSearch() {
   const [maxStops, setMaxStops] = useState<string>("any");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Get unique airlines and price range from flights data
   const airlines = useMemo(() => {
     return Array.from(new Set(flights.map(flight => flight.airline)));
   }, []);
@@ -49,7 +48,6 @@ export function FlightSearch() {
     return Math.max(...flights.map(flight => flight.price));
   }, []);
 
-  // Update price range initial state
   useState(() => {
     setPriceRange([0, maxPrice]);
   }, [maxPrice]);
@@ -57,7 +55,6 @@ export function FlightSearch() {
   const [searchResults, setSearchResults] = useState(flights);
 
   const handleSearch = () => {
-    // Filter flights based on all search criteria
     const results = flights.filter(flight => {
       const matchesRoute = (!from || flight.from.toLowerCase().includes(from.toLowerCase())) &&
         (!to || flight.to.toLowerCase().includes(to.toLowerCase()));
@@ -66,7 +63,7 @@ export function FlightSearch() {
 
       const matchesAirline = selectedAirline === "any" || flight.airline === selectedAirline;
 
-      const matchesStops = maxStops === "any" || 
+      const matchesStops = maxStops === "any" ||
         (maxStops === "0" && flight.stops === 0) ||
         (maxStops === "1" && flight.stops <= 1) ||
         (maxStops === "2+" && flight.stops >= 2);
@@ -82,173 +79,173 @@ export function FlightSearch() {
     <>
       <Card className="w-full max-w-4xl mx-auto">
         <CardContent className="p-6">
-          <div className="mb-6">
-            <RadioGroup
-              defaultValue="round"
-              onValueChange={setTripType}
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="round" id="round" />
-                <Label htmlFor="round">Round Trip</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="one" id="one" />
-                <Label htmlFor="one">One Way</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div>
-              <Label>From</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between"
-                  >
-                    {from || "Select departure city"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Search cities..." />
-                    <CommandEmpty>No city found.</CommandEmpty>
-                    <CommandGroup>
-                      {popularCities.map((city) => (
-                        <CommandItem
-                          key={city}
-                          onSelect={() => setFrom(city)}
-                          className="cursor-pointer"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              from === city ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {city}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <RadioGroup
+                defaultValue="round"
+                onValueChange={setTripType}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="round" id="round" />
+                  <Label htmlFor="round">Round Trip</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="one" id="one" />
+                  <Label htmlFor="one">One Way</Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div>
-              <Label>To</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between"
-                  >
-                    {to || "Select arrival city"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Search cities..." />
-                    <CommandEmpty>No city found.</CommandEmpty>
-                    <CommandGroup>
-                      {popularCities.map((city) => (
-                        <CommandItem
-                          key={city}
-                          onSelect={() => setTo(city)}
-                          className="cursor-pointer"
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              to === city ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {city}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            <div>
-              <Label>Departure Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !departDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {departDate ? format(departDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={departDate}
-                    onSelect={setDepartDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {tripType === "round" && (
-              <div>
-                <Label>Return Date</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>From</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      variant={"outline"}
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between h-10"
+                    >
+                      {from || "Select departure city"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search cities..." />
+                      <CommandEmpty>No city found.</CommandEmpty>
+                      <CommandGroup>
+                        {popularCities.map((city) => (
+                          <CommandItem
+                            key={city}
+                            onSelect={() => setFrom(city)}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                from === city ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {city}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>To</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between h-10"
+                    >
+                      {to || "Select arrival city"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search cities..." />
+                      <CommandEmpty>No city found.</CommandEmpty>
+                      <CommandGroup>
+                        {popularCities.map((city) => (
+                          <CommandItem
+                            key={city}
+                            onSelect={() => setTo(city)}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                to === city ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {city}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label>Departure Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !returnDate && "text-muted-foreground"
+                        "w-full justify-start text-left h-10",
+                        !departDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {returnDate ? format(returnDate, "PPP") : "Pick a date"}
+                      {departDate ? format(departDate, "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={returnDate}
-                      onSelect={setReturnDate}
+                      selected={departDate}
+                      onSelect={setDepartDate}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-            )}
 
-            <div>
-              <Label>Number of Travelers</Label>
-              <Input
-                type="number"
-                min="1"
-                max="9"
-                value={travelers}
-                onChange={(e) => setTravelers(parseInt(e.target.value) || 1)}
-                className="mt-2"
-              />
+              {tripType === "round" && (
+                <div className="space-y-2">
+                  <Label>Return Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left h-10",
+                          !returnDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {returnDate ? format(returnDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={returnDate}
+                        onSelect={setReturnDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Number of Travelers</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="9"
+                  value={travelers}
+                  onChange={(e) => setTravelers(parseInt(e.target.value) || 1)}
+                  className="h-10"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6">
-            <Button 
-              variant="outline" 
-              className="w-full mb-4"
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={() => setShowFilters(!showFilters)}
             >
               <Filter className="mr-2 h-4 w-4" />
@@ -305,12 +302,12 @@ export function FlightSearch() {
                 </div>
               </div>
             )}
-          </div>
 
-          <Button className="w-full mt-6" size="lg" onClick={handleSearch}>
-            <PlaneTakeoff className="mr-2 h-5 w-5" />
-            Search Flights
-          </Button>
+            <Button className="w-full" size="lg" onClick={handleSearch}>
+              <PlaneTakeoff className="mr-2 h-5 w-5" />
+              Search Flights
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
