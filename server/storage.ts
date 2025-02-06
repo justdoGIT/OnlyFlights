@@ -2,7 +2,6 @@ import {
   users, type User, type InsertUser,
   bookings, type Booking, type InsertBooking,
   enquiries, type Enquiry, type InsertEnquiry,
-  adminLogs, type AdminLog, type InsertAdminLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -27,10 +26,6 @@ export interface IStorage {
   getAllEnquiries(limit?: number, offset?: number): Promise<Enquiry[]>;
   updateEnquiryStatus(id: number, status: string): Promise<Enquiry>;
   getEnquiry(id: number): Promise<Enquiry | undefined>;
-
-  // Admin logs
-  createAdminLog(log: InsertAdminLog): Promise<AdminLog>;
-  getAdminLogs(limit?: number, offset?: number): Promise<AdminLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -127,21 +122,6 @@ export class DatabaseStorage implements IStorage {
   async getEnquiry(id: number): Promise<Enquiry | undefined> {
     const [enquiry] = await db.select().from(enquiries).where(eq(enquiries.id, id));
     return enquiry;
-  }
-
-  // Admin logs
-  async createAdminLog(log: InsertAdminLog): Promise<AdminLog> {
-    const [created] = await db.insert(adminLogs).values(log).returning();
-    return created;
-  }
-
-  async getAdminLogs(limit = 10, offset = 0): Promise<AdminLog[]> {
-    return await db
-      .select()
-      .from(adminLogs)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(adminLogs.createdAt));
   }
 }
 

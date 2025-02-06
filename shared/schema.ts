@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, date, decimal, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -40,21 +40,10 @@ export const enquiries = pgTable("enquiries", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const adminLogs = pgTable("admin_logs", {
-  id: serial("id").primaryKey(),
-  adminId: integer("admin_id").references(() => users.id),
-  action: text("action").notNull(),
-  entityType: text("entity_type").notNull(), // users, bookings, enquiries
-  entityId: integer("entity_id").notNull(),
-  details: text("details").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // Base schemas
 const baseUserSchema = createInsertSchema(users);
 const baseBookingSchema = createInsertSchema(bookings);
 const baseEnquirySchema = createInsertSchema(enquiries);
-const baseAdminLogSchema = createInsertSchema(adminLogs);
 
 // Extended schemas with validation
 export const insertUserSchema = baseUserSchema.extend({
@@ -86,14 +75,6 @@ export const insertEnquirySchema = baseEnquirySchema.extend({
   status: z.string().default("new"),
 });
 
-export const insertAdminLogSchema = baseAdminLogSchema.extend({
-  adminId: z.number().int(),
-  action: z.string(),
-  entityType: z.string(),
-  entityId: z.number().int(),
-  details: z.string(),
-});
-
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -101,5 +82,3 @@ export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Enquiry = typeof enquiries.$inferSelect;
 export type InsertEnquiry = z.infer<typeof insertEnquirySchema>;
-export type AdminLog = typeof adminLogs.$inferSelect;
-export type InsertAdminLog = z.infer<typeof insertAdminLogSchema>;
