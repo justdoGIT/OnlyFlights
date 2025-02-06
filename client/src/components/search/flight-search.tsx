@@ -33,6 +33,7 @@ export function FlightSearch() {
   const [returnDate, setReturnDate] = useState<Date>();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [travelers, setTravelers] = useState(1);
   const [showResults, setShowResults] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [selectedAirline, setSelectedAirline] = useState<string>("any");
@@ -176,7 +177,7 @@ export function FlightSearch() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div>
               <Label>Departure Date</Label>
               <Popover>
@@ -230,6 +231,18 @@ export function FlightSearch() {
                 </Popover>
               </div>
             )}
+
+            <div>
+              <Label>Number of Travelers</Label>
+              <Input
+                type="number"
+                min="1"
+                max="9"
+                value={travelers}
+                onChange={(e) => setTravelers(parseInt(e.target.value) || 1)}
+                className="mt-2"
+              />
+            </div>
           </div>
 
           <div className="mt-6">
