@@ -79,9 +79,12 @@ export default function BookingPage() {
         itemId: bookingDetails.id || 1,
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 86400000).toISOString(), // Next day
-        totalPrice: bookingDetails.price,
+        totalPrice: bookingDetails.price.toString(), // Convert to string
         status: "pending",
-        details: JSON.stringify(bookingDetails)
+        details: JSON.stringify({
+          ...bookingDetails,
+          price: bookingDetails.price.toString() // Ensure price is string in details
+        })
       };
 
       const response = await fetch("/api/bookings", {
@@ -215,9 +218,9 @@ export default function BookingPage() {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Processing..." : "Confirm Booking"}

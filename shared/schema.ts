@@ -50,6 +50,14 @@ export const insertBookingSchema = baseBookingSchema.extend({
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(1, "Phone number is required"),
+  totalPrice: z.string(), // Accept string for price
+  details: z.string(),
+  status: z.string(),
+  type: z.string(),
+  itemId: z.number().int(),
+  startDate: z.string(),
+  endDate: z.string(),
+  userId: z.number().int().optional(),
 });
 
 export const insertEnquirySchema = baseEnquirySchema.extend({
