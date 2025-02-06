@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import QRCode from 'qrcode';
 
 // Create reusable transporter object using SMTP transport
 const transporter = nodemailer.createTransport({
@@ -33,17 +34,50 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   }
 }
 
-export function generateBookingConfirmationEmail(booking: any) {
+async function generateTravelerQRCode(bookingId: number, traveler: any) {
+  try {
+    // Create QR code data with booking and traveler information
+    const qrData = JSON.stringify({
+      bookingId,
+      travelerId: `${bookingId}-${traveler.firstName}-${traveler.lastName}`,
+      name: `${traveler.firstName} ${traveler.lastName}`,
+      type: traveler.type,
+      ...(traveler.passportNumber && { passportNumber: traveler.passportNumber })
+    });
+
+    // Generate QR code as data URL
+    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 200
+    });
+
+    return qrCodeDataUrl;
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    return null;
+  }
+}
+
+export async function generateBookingConfirmationEmail(booking: any) {
   const bookingDetails = JSON.parse(booking.details);
   const travelers = bookingDetails.travelers || [];
 
+  // Generate QR codes for all travelers
+  const travelersWithQR = await Promise.all(
+    travelers.map(async (traveler: any) => {
+      const qrCode = await generateTravelerQRCode(booking.id, traveler);
+      return { ...traveler, qrCode };
+    })
+  );
+
   const renderTravelersList = () => {
-    if (!travelers.length) return '';
+    if (!travelersWithQR.length) return '';
 
     return `
       <div style="margin-top: 20px;">
         <h3 style="color: #333;">Traveler Information</h3>
-        ${travelers.map((traveler: any, index: number) => `
+        ${travelersWithQR.map((traveler: any, index: number) => `
           <div style="margin: 10px 0; padding: 10px; background-color: ${index === 0 ? '#e6f3ff' : '#f8f9fa'}; border-radius: 5px;">
             <p><strong>${index === 0 ? 'Main Booker' : `Additional Traveler ${index}`}</strong></p>
             <p>Name: ${traveler.firstName} ${traveler.lastName}</p>
@@ -51,6 +85,13 @@ export function generateBookingConfirmationEmail(booking: any) {
             ${traveler.phone ? `<p>Phone: ${traveler.phone}</p>` : ''}
             ${traveler.dateOfBirth ? `<p>Date of Birth: ${traveler.dateOfBirth}</p>` : ''}
             ${traveler.passportNumber ? `<p>Passport Number: ${traveler.passportNumber}</p>` : ''}
+            ${traveler.qrCode ? `
+              <div style="margin-top: 10px;">
+                <p><strong>Your Unique Travel QR Code:</strong></p>
+                <img src="${traveler.qrCode}" alt="Traveler QR Code" style="width: 200px; height: 200px;">
+                <p style="font-size: 12px; color: #666;">Present this QR code during check-in</p>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>
