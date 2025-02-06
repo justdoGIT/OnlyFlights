@@ -16,13 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CreditCard } from "lucide-react";
-
-const paymentSchema = z.object({
-  cardNumber: z.string().min(16, "Card number must be 16 digits").max(16),
-  expiryDate: z.string().min(5, "Invalid expiry date").max(5),
-  cvv: z.string().min(3, "CVV must be 3 digits").max(3),
-});
+import { PaymentForm } from "@/components/payment-form";
 
 const bookingSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -32,7 +26,6 @@ const bookingSchema = z.object({
 });
 
 type BookingData = z.infer<typeof bookingSchema>;
-type PaymentData = z.infer<typeof paymentSchema>;
 
 export default function BookingPage() {
   const [, setLocation] = useLocation();
@@ -70,38 +63,11 @@ export default function BookingPage() {
     },
   });
 
-  const paymentForm = useForm<PaymentData>({
-    resolver: zodResolver(paymentSchema),
-    defaultValues: {
-      cardNumber: "",
-      expiryDate: "",
-      cvv: "",
-    },
-  });
-
-  const processPayment = async (paymentData: PaymentData) => {
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Mock validation - accept only if card number ends with '4242'
-    if (!paymentData.cardNumber.endsWith('4242')) {
-      throw new Error('Payment failed. Use a card number ending in 4242 for testing.');
-    }
-
-    return true;
-  };
-
   const onBookingSubmit = async (data: BookingData) => {
     setShowPayment(true);
-    // Reset payment form when showing payment view
-    paymentForm.reset({
-      cardNumber: '',
-      expiryDate: '',
-      cvv: ''
-    });
   };
 
-  const onPaymentSubmit = async (paymentData: PaymentData) => {
+  const onPaymentSubmit = async (paymentData: any) => {
     if (!bookingDetails) {
       toast({
         title: "Error",
@@ -113,8 +79,13 @@ export default function BookingPage() {
 
     setIsSubmitting(true);
     try {
-      // Process payment first
-      await processPayment(paymentData);
+      // Mock payment validation
+      if (!paymentData.cardNumber.endsWith('4242')) {
+        throw new Error('Payment failed. Use a card number ending in 4242 for testing.');
+      }
+
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // If payment successful, create booking
       const bookingData = {
@@ -271,113 +242,11 @@ export default function BookingPage() {
                 </form>
               </Form>
             ) : (
-              <Form {...paymentForm}>
-                <form onSubmit={paymentForm.handleSubmit(onPaymentSubmit)} className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary mb-4">
-                    <CreditCard className="h-5 w-5" />
-                    <h2 className="font-semibold">Payment Details</h2>
-                  </div>
-
-                  <FormField
-                    control={paymentForm.control}
-                    name="cardNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Card Number</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="1234 5678 9012 4242"
-                            maxLength={16}
-                            type="text"
-                            inputMode="numeric"
-                            autoComplete="cc-number"
-                            value={field.value}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              field.onChange(value);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={paymentForm.control}
-                      name="expiryDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Expiry Date</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="MM/YY"
-                              maxLength={5}
-                              type="text"
-                              inputMode="numeric"
-                              autoComplete="cc-exp"
-                              value={field.value}
-                              onChange={(e) => {
-                                let value = e.target.value.replace(/\D/g, '');
-                                if (value.length >= 2) {
-                                  value = value.slice(0, 2) + '/' + value.slice(2);
-                                }
-                                field.onChange(value.slice(0, 5));
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={paymentForm.control}
-                      name="cvv"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CVV</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="123"
-                              maxLength={3}
-                              type="password"
-                              inputMode="numeric"
-                              autoComplete="cc-csc"
-                              value={field.value}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/\D/g, '');
-                                field.onChange(value);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      `Pay $${bookingDetails.price}`
-                    )}
-                  </Button>
-
-                  <p className="text-sm text-gray-500 text-center mt-4">
-                    For testing, use a card number ending in 4242
-                  </p>
-                </form>
-              </Form>
+              <PaymentForm 
+                amount={bookingDetails.price}
+                onSubmit={onPaymentSubmit}
+                isSubmitting={isSubmitting}
+              />
             )}
           </CardContent>
         </Card>
