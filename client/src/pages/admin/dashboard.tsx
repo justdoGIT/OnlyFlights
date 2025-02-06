@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from "react";
+import { Suspense, lazy, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -15,6 +15,10 @@ import {
   BarChart3
 } from "lucide-react";
 
+// Lazy load tables and charts
+const BookingsTable = lazy(() => import("@/components/admin/bookings-table"));
+const EnquiriesTable = lazy(() => import("@/components/admin/enquiries-table"));
+
 // Memoized stat card component
 const StatCard = React.memo(({ icon: Icon, label, value }: { 
   icon: any, 
@@ -30,20 +34,32 @@ const StatCard = React.memo(({ icon: Icon, label, value }: {
   </Card>
 ));
 
+interface AdminStats {
+  totalUsers: number;
+  activeBookings: number;
+  newEnquiries: number;
+  monthlyRevenue: number;
+}
+
+interface User {
+  isAdmin: boolean;
+}
+
 const AdminDashboard = () => {
   const [, navigate] = useLocation();
 
-  // Fetch user data with stale time to prevent unnecessary refetches
-  const { data: user, isLoading: userLoading } = useQuery({
+  // Optimized queries with proper types and caching
+  const { data: user, isLoading: userLoading } = useQuery<User>({
     queryKey: ['/api/auth/me'],
-    staleTime: 30000, // Consider data fresh for 30 seconds
+    staleTime: 30000,
+    retry: 1
   });
 
-  // Fetch stats with automatic background updates
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
-    staleTime: 60000, // Consider data fresh for 1 minute
-    refetchInterval: 300000, // Refetch every 5 minutes
+    staleTime: 60000,
+    refetchInterval: 300000,
+    retry: 2
   });
 
   useEffect(() => {
@@ -57,7 +73,7 @@ const AdminDashboard = () => {
     navigate(`/admin/${route}`);
   }, [navigate]);
 
-  // Memoize stats data to prevent unnecessary re-renders
+  // Memoize stats data
   const statsData = useMemo(() => ({
     totalUsers: stats?.totalUsers ?? 'Loading...',
     activeBookings: stats?.activeBookings ?? 'Loading...',
@@ -73,15 +89,23 @@ const AdminDashboard = () => {
     <div className="container mx-auto p-4 space-y-4">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
-      {/* Stats Overview */}
+      {/* Stats Overview with loading states */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="Total Users" value={statsData.totalUsers} />
-        <StatCard icon={CalendarDays} label="Active Bookings" value={statsData.activeBookings} />
-        <StatCard icon={MessagesSquare} label="New Enquiries" value={statsData.newEnquiries} />
-        <StatCard icon={BarChart3} label="Monthly Revenue" value={statsData.monthlyRevenue} />
+        {statsLoading ? (
+          Array(4).fill(null).map((_, i) => (
+            <Skeleton key={i} className="h-[100px]" />
+          ))
+        ) : (
+          <>
+            <StatCard icon={Users} label="Total Users" value={statsData.totalUsers} />
+            <StatCard icon={CalendarDays} label="Active Bookings" value={statsData.activeBookings} />
+            <StatCard icon={MessagesSquare} label="New Enquiries" value={statsData.newEnquiries} />
+            <StatCard icon={BarChart3} label="Monthly Revenue" value={statsData.monthlyRevenue} />
+          </>
+        )}
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content Area with Suspense boundaries */}
       <ResizablePanelGroup direction="horizontal" className="min-h-[600px] rounded-lg border">
         <ResizablePanel defaultSize={25} minSize={20}>
           <div className="flex flex-col h-full p-4">
@@ -103,16 +127,21 @@ const AdminDashboard = () => {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={75}>
-          <div className="p-4">
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-              {statsLoading ? (
-                <Skeleton className="h-[200px]" />
-              ) : (
-                <p className="text-muted-foreground">No recent activity to display</p>
-              )}
-            </Card>
-          </div>
+          <Suspense fallback={<div className="p-4"><Skeleton className="h-[400px]" /></div>}>
+            <div className="p-4">
+              <Card className="p-4">
+                <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+                {statsLoading ? (
+                  <Skeleton className="h-[200px]" />
+                ) : (
+                  <>
+                    <BookingsTable />
+                    <EnquiriesTable />
+                  </>
+                )}
+              </Card>
+            </div>
+          </Suspense>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Table,
@@ -23,24 +23,87 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Loader2 } from "lucide-react";
+
+interface Enquiry {
+  id: number;
+  name: string;
+  email: string;
+  message: string;
+  status: string;
+  createdAt: string;
+}
+
+// Memoized enquiry row component
+const EnquiryRow = memo(({ 
+  enquiry, 
+  onUpdateStatus,
+  onViewDetails 
+}: { 
+  enquiry: Enquiry;
+  onUpdateStatus: (id: number, status: string) => Promise<void>;
+  onViewDetails: (enquiry: Enquiry) => void;
+}) => (
+  <TableRow>
+    <TableCell>{enquiry.id}</TableCell>
+    <TableCell>{enquiry.name}</TableCell>
+    <TableCell>{enquiry.email}</TableCell>
+    <TableCell>
+      <span className={`px-2 py-1 rounded-full text-xs ${
+        enquiry.status === "resolved" ? "bg-green-100 text-green-800" :
+        enquiry.status === "in_progress" ? "bg-yellow-100 text-yellow-800" :
+        "bg-blue-100 text-blue-800"
+      }`}>
+        {enquiry.status}
+      </span>
+    </TableCell>
+    <TableCell>{new Date(enquiry.createdAt).toLocaleDateString()}</TableCell>
+    <TableCell>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onViewDetails(enquiry)}>
+            View Details
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onUpdateStatus(enquiry.id, "in_progress")}>
+            Mark In Progress
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onUpdateStatus(enquiry.id, "resolved")}>
+            Mark Resolved
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </TableCell>
+  </TableRow>
+));
+
+interface EnquiriesResponse {
+  enquiries: Enquiry[];
+  hasMore: boolean;
+}
 
 export function EnquiriesTable() {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
-  const [selectedEnquiry, setSelectedEnquiry] = useState<any>(null);
+  const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const limit = 10;
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch } = useQuery<EnquiriesResponse>({
     queryKey: ["/api/admin/enquiries", page],
     queryFn: async () => {
       const response = await fetch(`/api/admin/enquiries?page=${page}&limit=${limit}`);
       if (!response.ok) throw new Error("Failed to fetch enquiries");
       return response.json();
-    }
+    },
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    keepPreviousData: true // Keep old data while fetching new data
   });
 
-  const updateEnquiryStatus = async (id: number, status: string) => {
+  const updateEnquiryStatus = useCallback(async (id: number, status: string) => {
     try {
       const response = await fetch(`/api/admin/enquiries/${id}`, {
         method: "PATCH",
@@ -63,10 +126,18 @@ export function EnquiriesTable() {
         variant: "destructive"
       });
     }
-  };
+  }, [toast, refetch]);
+
+  const handleViewDetails = useCallback((enquiry: Enquiry) => {
+    setSelectedEnquiry(enquiry);
+  }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -83,48 +154,13 @@ export function EnquiriesTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.enquiries.map((enquiry: any) => (
-            <TableRow key={enquiry.id}>
-              <TableCell>{enquiry.id}</TableCell>
-              <TableCell>{enquiry.name}</TableCell>
-              <TableCell>{enquiry.email}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  enquiry.status === "resolved" ? "bg-green-100 text-green-800" :
-                  enquiry.status === "in_progress" ? "bg-yellow-100 text-yellow-800" :
-                  "bg-blue-100 text-blue-800"
-                }`}>
-                  {enquiry.status}
-                </span>
-              </TableCell>
-              <TableCell>{new Date(enquiry.createdAt).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => setSelectedEnquiry(enquiry)}
-                    >
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => updateEnquiryStatus(enquiry.id, "in_progress")}
-                    >
-                      Mark In Progress
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => updateEnquiryStatus(enquiry.id, "resolved")}
-                    >
-                      Mark Resolved
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
+          {data?.enquiries.map((enquiry) => (
+            <EnquiryRow 
+              key={enquiry.id}
+              enquiry={enquiry}
+              onUpdateStatus={updateEnquiryStatus}
+              onViewDetails={handleViewDetails}
+            />
           ))}
         </TableBody>
       </Table>
@@ -178,3 +214,5 @@ export function EnquiriesTable() {
     </div>
   );
 }
+
+export default memo(EnquiriesTable);
