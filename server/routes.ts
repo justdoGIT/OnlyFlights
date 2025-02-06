@@ -16,8 +16,9 @@ export function registerRoutes(app: Express): Server {
       res.json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ message: err.errors[0].message });
       } else {
+        console.error('Booking creation error:', err);
         res.status(500).json({ message: 'Internal server error' });
       }
     }
@@ -29,6 +30,7 @@ export function registerRoutes(app: Express): Server {
       const bookings = await storage.getBookingsByUser(userId);
       res.json(bookings);
     } catch (err) {
+      console.error('Error fetching bookings:', err);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -40,8 +42,9 @@ export function registerRoutes(app: Express): Server {
       res.json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ message: err.errors[0].message });
       } else {
+        console.error('Enquiry creation error:', err);
         res.status(500).json({ message: 'Internal server error' });
       }
     }

@@ -26,23 +26,23 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+  async createUser(user: InsertUser): Promise<User> {
+    const [created] = await db.insert(users).values(user).returning();
+    return created;
   }
 
-  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
-    const [booking] = await db.insert(bookings).values(insertBooking).returning();
-    return booking;
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    const [created] = await db.insert(bookings).values(booking).returning();
+    return created;
   }
 
   async getBookingsByUser(userId: number): Promise<Booking[]> {
     return await db.select().from(bookings).where(eq(bookings.userId, userId));
   }
 
-  async createEnquiry(insertEnquiry: InsertEnquiry): Promise<Enquiry> {
-    const [enquiry] = await db.insert(enquiries).values(insertEnquiry).returning();
-    return enquiry;
+  async createEnquiry(enquiry: InsertEnquiry): Promise<Enquiry> {
+    const [created] = await db.insert(enquiries).values(enquiry).returning();
+    return created;
   }
 }
 
