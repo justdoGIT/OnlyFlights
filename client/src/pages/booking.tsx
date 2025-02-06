@@ -34,11 +34,24 @@ export default function BookingPage() {
   const [bookingDetails, setBookingDetails] = useState<any>(null);
 
   useEffect(() => {
-    const state = window.history.state;
-    if (state?.bookingDetails) {
-      setBookingDetails(state.bookingDetails);
+    // Retrieve booking details from sessionStorage
+    const storedDetails = sessionStorage.getItem('bookingDetails');
+    if (storedDetails) {
+      try {
+        const details = JSON.parse(storedDetails);
+        setBookingDetails(details);
+        // Clear the stored details to prevent stale data
+        sessionStorage.removeItem('bookingDetails');
+      } catch (error) {
+        console.error('Failed to parse booking details:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load booking details",
+          variant: "destructive",
+        });
+      }
     }
-  }, []);
+  }, [toast]);
 
   const form = useForm<BookingData>({
     resolver: zodResolver(bookingSchema),
@@ -78,7 +91,7 @@ export default function BookingPage() {
         description: "Your booking has been confirmed!",
       });
 
-      // Redirect to booking confirmation page
+      // Redirect to home page
       setLocation("/");
     } catch (error) {
       toast({

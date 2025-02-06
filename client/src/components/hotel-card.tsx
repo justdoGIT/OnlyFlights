@@ -15,12 +15,15 @@ export function HotelCard({ image, name, location, price, rating }: HotelCardPro
   const [, setLocation] = useLocation();
 
   const handleBooking = () => {
-    // Pass hotel details through history state
-    window.history.pushState(
-      { bookingDetails: { image, name, location, price, rating, type: "hotel" } },
-      "",
-      "/booking"
-    );
+    // Store booking details in sessionStorage to persist through navigation
+    sessionStorage.setItem('bookingDetails', JSON.stringify({
+      image,
+      name,
+      location,
+      price,
+      rating,
+      type: 'hotel'
+    }));
     setLocation("/booking");
   };
 

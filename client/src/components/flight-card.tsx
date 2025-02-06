@@ -12,9 +12,11 @@ export function FlightCard({ flight }: FlightCardProps) {
   const [, setLocation] = useLocation();
 
   const handleBooking = () => {
-    // Set the booking details in the window.history.state
-    const state = { bookingDetails: { ...flight, type: "flight" } };
-    window.history.replaceState(state, "");
+    // Store booking details in sessionStorage to persist through navigation
+    sessionStorage.setItem('bookingDetails', JSON.stringify({
+      ...flight,
+      type: 'flight'
+    }));
     setLocation("/booking");
   };
 
