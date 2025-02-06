@@ -63,12 +63,20 @@ export default function BookingPage() {
   const bookingForm = useForm<BookingData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       email: user?.email || "",
+      phone: "",
     },
   });
 
   const paymentForm = useForm<PaymentData>({
     resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      cardNumber: "",
+      expiryDate: "",
+      cvv: "",
+    },
   });
 
   const processPayment = async (paymentData: PaymentData) => {
@@ -272,7 +280,9 @@ export default function BookingPage() {
                         <FormLabel>Card Number</FormLabel>
                         <FormControl>
                           <Input 
-                            {...field} 
+                            {...field}
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, '').slice(0, 16))}
                             placeholder="1234 5678 9012 4242"
                             maxLength={16}
                           />
@@ -291,7 +301,15 @@ export default function BookingPage() {
                           <FormLabel>Expiry Date</FormLabel>
                           <FormControl>
                             <Input 
-                              {...field} 
+                              {...field}
+                              value={field.value}
+                              onChange={(e) => {
+                                let value = e.target.value.replace(/\D/g, '');
+                                if (value.length >= 2) {
+                                  value = value.slice(0, 2) + '/' + value.slice(2);
+                                }
+                                field.onChange(value.slice(0, 5));
+                              }}
                               placeholder="MM/YY"
                               maxLength={5}
                             />
@@ -309,7 +327,9 @@ export default function BookingPage() {
                           <FormLabel>CVV</FormLabel>
                           <FormControl>
                             <Input 
-                              {...field} 
+                              {...field}
+                              value={field.value}
+                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, '').slice(0, 3))}
                               type="password"
                               placeholder="123"
                               maxLength={3}
