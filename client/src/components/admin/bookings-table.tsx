@@ -26,58 +26,7 @@ interface Booking {
   totalPrice: number;
   status: string;
   createdAt: string;
-}
-
-// Memoized table row component
-const BookingRow = memo(({ 
-  booking, 
-  onUpdateStatus 
-}: { 
-  booking: Booking;
-  onUpdateStatus: (id: number, status: string) => Promise<void>;
-}) => (
-  <TableRow>
-    <TableCell>{booking.id}</TableCell>
-    <TableCell>{booking.firstName} {booking.lastName}</TableCell>
-    <TableCell className="capitalize">{booking.type}</TableCell>
-    <TableCell>${booking.totalPrice}</TableCell>
-    <TableCell>
-      <span className={`px-2 py-1 rounded-full text-xs ${
-        booking.status === "confirmed" ? "bg-green-100 text-green-800" :
-        booking.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-        "bg-red-100 text-red-800"
-      }`}>
-        {booking.status}
-      </span>
-    </TableCell>
-    <TableCell>{new Date(booking.createdAt).toLocaleDateString()}</TableCell>
-    <TableCell>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => onUpdateStatus(booking.id, "confirmed")}
-          >
-            Mark as Confirmed
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => onUpdateStatus(booking.id, "cancelled")}
-          >
-            Cancel Booking
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </TableCell>
-  </TableRow>
-));
-
-interface BookingsResponse {
-  bookings: Booking[];
-  hasMore: boolean;
+  details: string;
 }
 
 export function BookingsTable() {
@@ -85,15 +34,13 @@ export function BookingsTable() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const { data, isLoading, refetch } = useQuery<BookingsResponse>({
-    queryKey: ["/api/admin/bookings", page],
+  const { data, isLoading, refetch } = useQuery<{ bookings: Booking[], hasMore: boolean }>({
+    queryKey: ['/api/admin/bookings', page],
     queryFn: async () => {
       const response = await fetch(`/api/admin/bookings?page=${page}&limit=${limit}`);
       if (!response.ok) throw new Error("Failed to fetch bookings");
       return response.json();
-    },
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    keepPreviousData: true // Keep old data while fetching new data
+    }
   });
 
   const updateBookingStatus = useCallback(async (id: number, status: string) => {
@@ -104,7 +51,7 @@ export function BookingsTable() {
         body: JSON.stringify({ status })
       });
 
-      if (!response.ok) throw new Error("Failed to update booking status");
+      if (!response.ok) throw new Error();
 
       toast({
         title: "Success",
@@ -115,7 +62,7 @@ export function BookingsTable() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update booking status",
+        description: "Failed to update booking status",
         variant: "destructive"
       });
     }
@@ -124,7 +71,7 @@ export function BookingsTable() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -135,7 +82,7 @@ export function BookingsTable() {
         <TableHeader>
           <TableRow>
             <TableHead>ID</TableHead>
-            <TableHead>User</TableHead>
+            <TableHead>Customer</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Total Price</TableHead>
             <TableHead>Status</TableHead>
@@ -145,11 +92,43 @@ export function BookingsTable() {
         </TableHeader>
         <TableBody>
           {data?.bookings.map((booking) => (
-            <BookingRow 
-              key={booking.id} 
-              booking={booking} 
-              onUpdateStatus={updateBookingStatus}
-            />
+            <TableRow key={booking.id}>
+              <TableCell>{booking.id}</TableCell>
+              <TableCell>{booking.firstName} {booking.lastName}</TableCell>
+              <TableCell className="capitalize">{booking.type}</TableCell>
+              <TableCell>${booking.totalPrice}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  booking.status === "confirmed" ? "bg-green-100 text-green-800" :
+                  booking.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                  "bg-red-100 text-red-800"
+                }`}>
+                  {booking.status}
+                </span>
+              </TableCell>
+              <TableCell>{new Date(booking.createdAt).toLocaleDateString()}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => updateBookingStatus(booking.id, "confirmed")}
+                    >
+                      Mark as Confirmed
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => updateBookingStatus(booking.id, "cancelled")}
+                    >
+                      Cancel Booking
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
