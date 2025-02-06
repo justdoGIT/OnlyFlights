@@ -15,9 +15,13 @@ export function registerRoutes(app: Express): Server {
       const booking = insertBookingSchema.parse(req.body);
       const result = await storage.createBooking(booking);
 
+      // Parse booking details to get the main contact email
+      const bookingDetails = JSON.parse(result.details);
+      const emailTo = bookingDetails.mainContactEmail || booking.email;
+
       // Send confirmation email
       const emailSent = await sendEmail({
-        to: booking.email,
+        to: emailTo,
         subject: 'Your HappyFares Booking Confirmation',
         html: generateBookingConfirmationEmail(result)
       });

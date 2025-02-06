@@ -103,11 +103,12 @@ export default function BookingPage() {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Prepare travelers data
+      // Prepare travelers data - ensure main booker has all contact details
       const travelers = [
         {
           type: 'main_booker',
-          ...mainBookerData
+          ...mainBookerData,
+          isMainContact: true
         },
         ...(additionalTravelersData.map(traveler => ({
           type: 'additional_traveler',
@@ -115,7 +116,7 @@ export default function BookingPage() {
         })))
       ];
 
-      // If payment successful, create booking
+      // Create booking data with explicit email field for confirmation
       const bookingData = {
         ...mainBookerData,
         userId: user?.id,
@@ -128,7 +129,8 @@ export default function BookingPage() {
         details: JSON.stringify({
           ...bookingDetails,
           travelers,
-          price: String(bookingDetails.price)
+          price: String(bookingDetails.price),
+          mainContactEmail: mainBookerData.email // Explicitly include main contact email
         })
       };
 
@@ -297,7 +299,7 @@ export default function BookingPage() {
                 </form>
               </Form>
             ) : (
-              <PaymentForm 
+              <PaymentForm
                 amount={bookingDetails.price * bookingDetails.travelers}
                 totalTravelers={bookingDetails.travelers}
                 onSubmit={onPaymentSubmit}
