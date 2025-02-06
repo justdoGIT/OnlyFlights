@@ -27,57 +27,68 @@ export function Navbar() {
     setLocation("/");
   };
 
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+  };
+
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <a className="text-2xl font-bold text-primary">OnlyFlights</a>
-        </Link>
+        <div 
+          className="text-2xl font-bold text-primary cursor-pointer" 
+          onClick={() => handleNavigation("/")}
+        >
+          OnlyFlights
+        </div>
 
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
-              <Link href="/flights">
-                <NavigationMenuLink className={cn(
+              <NavigationMenuLink
+                className={cn(
                   "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}>
-                  <PlaneTakeoff className="mr-2 h-4 w-4" />
-                  Flights
-                </NavigationMenuLink>
-              </Link>
+                )}
+                onClick={() => handleNavigation("/flights")}
+              >
+                <PlaneTakeoff className="mr-2 h-4 w-4" />
+                Flights
+              </NavigationMenuLink>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link href="/hotels">
-                <NavigationMenuLink className={cn(
+              <NavigationMenuLink
+                className={cn(
                   "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}>
-                  <Hotel className="mr-2 h-4 w-4" />
-                  Hotels
-                </NavigationMenuLink>
-              </Link>
+                )}
+                onClick={() => handleNavigation("/hotels")}
+              >
+                <Hotel className="mr-2 h-4 w-4" />
+                Hotels
+              </NavigationMenuLink>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link href="/packages">
-                <NavigationMenuLink className={cn(
+              <NavigationMenuLink
+                className={cn(
                   "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}>
-                  <Package className="mr-2 h-4 w-4" />
-                  Packages
-                </NavigationMenuLink>
-              </Link>
+                )}
+                onClick={() => handleNavigation("/packages")}
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Packages
+              </NavigationMenuLink>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link href="/contact">
-                <NavigationMenuLink className={cn(
+              <NavigationMenuLink
+                className={cn(
                   "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}>
-                  <Phone className="mr-2 h-4 w-4" />
-                  Contact
-                </NavigationMenuLink>
-              </Link>
+                )}
+                onClick={() => handleNavigation("/contact")}
+              >
+                <Phone className="mr-2 h-4 w-4" />
+                Contact
+              </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
@@ -92,11 +103,9 @@ export function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <Link href="/dashboard">
-                  <DropdownMenuItem className="cursor-pointer">
-                    Dashboard
-                  </DropdownMenuItem>
-                </Link>
+                <DropdownMenuItem onClick={() => handleNavigation("/dashboard")}>
+                  Dashboard
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   Logout
                 </DropdownMenuItem>
@@ -104,12 +113,12 @@ export function Navbar() {
             </DropdownMenu>
           ) : (
             <>
-              <Link href="/auth">
-                <Button variant="outline">Sign In</Button>
-              </Link>
-              <Link href="/auth">
-                <Button>Register</Button>
-              </Link>
+              <Button variant="outline" onClick={() => handleNavigation("/auth")}>
+                Sign In
+              </Button>
+              <Button onClick={() => handleNavigation("/auth")}>
+                Register
+              </Button>
             </>
           )}
         </div>
