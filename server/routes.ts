@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertBookingSchema, insertEnquirySchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
+import { sendEmail, generateBookingConfirmationEmail } from "./services/email";
 
 export function registerRoutes(app: Express): Server {
   // Set up authentication routes and middleware
@@ -13,6 +14,18 @@ export function registerRoutes(app: Express): Server {
     try {
       const booking = insertBookingSchema.parse(req.body);
       const result = await storage.createBooking(booking);
+
+      // Send confirmation email
+      const emailSent = await sendEmail({
+        to: booking.email,
+        subject: 'Your HappyFares Booking Confirmation',
+        html: generateBookingConfirmationEmail(result)
+      });
+
+      if (!emailSent) {
+        console.warn('Failed to send confirmation email for booking:', result.id);
+      }
+
       res.json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {
