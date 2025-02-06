@@ -5,10 +5,14 @@ import { insertBookingSchema, insertEnquirySchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import { sendEmail, generateBookingConfirmationEmail } from "./services/email";
+import adminRoutes from "./routes/admin";
 
 export function registerRoutes(app: Express): Server {
   // Set up authentication routes and middleware
   setupAuth(app);
+
+  // Register admin routes
+  app.use('/api/admin', adminRoutes);
 
   app.post('/api/bookings', async (req, res) => {
     try {
@@ -22,8 +26,8 @@ export function registerRoutes(app: Express): Server {
       // Send confirmation email
       const emailSent = await sendEmail({
         to: emailTo,
-        subject: 'Your HappyFares Booking Confirmation',
-        html: generateBookingConfirmationEmail(result)
+        subject: 'Your OnlyFlights Booking Confirmation',
+        html: await generateBookingConfirmationEmail(result)
       });
 
       if (!emailSent) {
