@@ -46,7 +46,7 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
   });
 
   return (
-    <Card className="mt-6">
+    <Card>
       <CardHeader>
         <CardTitle>Traveler Details</CardTitle>
       </CardHeader>
@@ -115,7 +115,7 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
               </div>
             ))}
             <Button type="submit" className="w-full">
-              Continue with Search
+              Continue to Payment
             </Button>
           </form>
         </Form>
