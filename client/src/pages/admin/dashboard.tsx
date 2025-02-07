@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -79,7 +80,7 @@ interface Analytics {
 
 // Memoized components for better performance
 const StatCard = React.memo(({ icon: Icon, label, value, trend }: {
-  icon: any;
+  icon: React.ElementType;
   label: string;
   value: string | number;
   trend?: { value: number; direction: 'up' | 'down' };
@@ -104,27 +105,37 @@ const AdminDashboard = () => {
   const [timeframe, setTimeframe] = React.useState('7d');
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
     staleTime: 60000,
-    refetchInterval: 300000
+    refetchInterval: 300000,
+    retry: 3
   });
 
-  const { data: analytics, isLoading: analyticsLoading } = useQuery<Analytics>({
+  const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery<Analytics>({
     queryKey: ['/api/admin/analytics', timeframe],
     staleTime: 60000,
-    refetchInterval: 300000
+    refetchInterval: 300000,
+    retry: 3
   });
 
   React.useEffect(() => {
     if (!user?.isAdmin) {
       setLocation('/auth');
+      return;
     }
   }, [user, setLocation]);
 
-  if (!user?.isAdmin) {
-    return null;
+  if (!user?.isAdmin) return null;
+
+  if (statsError || analyticsError) {
+    toast({
+      title: "Error loading dashboard data",
+      description: statsError?.message || analyticsError?.message || "Failed to load dashboard data",
+      variant: "destructive"
+    });
   }
 
   return (
@@ -154,25 +165,23 @@ const AdminDashboard = () => {
           <>
             <StatCard
               icon={DollarSign}
-              label="Total Revenue"
-              value={`$${stats.monthlyRevenue}`}
-              trend={{ value: 12, direction: 'up' }}
+              label="Monthly Revenue"
+              value={`$${stats?.monthlyRevenue ?? '0.00'}`}
             />
             <StatCard
               icon={Users}
               label="Total Users"
-              value={stats.totalUsers}
-              trend={{ value: 5, direction: 'up' }}
+              value={stats?.totalUsers ?? 0}
             />
             <StatCard
               icon={CalendarDays}
               label="Active Bookings"
-              value={stats.activeBookings}
+              value={stats?.activeBookings ?? 0}
             />
             <StatCard
               icon={MessagesSquare}
               label="New Enquiries"
-              value={stats.newEnquiries}
+              value={stats?.newEnquiries ?? 0}
             />
           </>
         )}
@@ -189,7 +198,7 @@ const AdminDashboard = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <RePieChart>
                   <Pie
-                    data={Object.entries(analytics.trends.bookingStatus).map(([name, value]) => ({
+                    data={Object.entries(analytics.trends.bookingStatus ?? {}).map(([name, value]) => ({
                       name,
                       value
                     }))}

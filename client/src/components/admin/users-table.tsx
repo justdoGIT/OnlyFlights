@@ -25,6 +25,12 @@ interface UsersTableProps {
   className?: string;
 }
 
+interface UsersResponse {
+  users: SelectUser[];
+  hasMore: boolean;
+  total: number;
+}
+
 export function UsersTable({ className }: UsersTableProps) {
   const { toast } = useToast();
   const [page, setPage] = useState(1);
@@ -32,7 +38,7 @@ export function UsersTable({ className }: UsersTableProps) {
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
   const limit = 10;
 
-  const { data, isLoading, refetch } = useQuery<{ users: SelectUser[], hasMore: boolean }>({
+  const { data, isLoading, error, refetch } = useQuery<UsersResponse>({
     queryKey: ['/api/admin/users', page, search, roleFilter],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -41,10 +47,15 @@ export function UsersTable({ className }: UsersTableProps) {
         ...(search && { search }),
         ...(roleFilter !== "all" && { role: roleFilter })
       });
+
       const response = await fetch(`/api/admin/users?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to fetch users");
+      }
       return response.json();
-    }
+    },
+    retry: 3
   });
 
   const toggleAdmin = useCallback(async (userId: number, makeAdmin: boolean) => {
@@ -62,7 +73,8 @@ export function UsersTable({ className }: UsersTableProps) {
 
       toast({
         title: "Success",
-        description: "User role updated successfully"
+        description: `User role updated successfully to ${makeAdmin ? 'Admin' : 'User'}`,
+        variant: "default"
       });
 
       refetch();
@@ -75,10 +87,23 @@ export function UsersTable({ className }: UsersTableProps) {
     }
   }, [toast, refetch]);
 
-  const filteredUsers = data?.users.filter(user => {
-    if (roleFilter === "all") return true;
-    return roleFilter === "admin" ? user.isAdmin : !user.isAdmin;
-  });
+  const filteredUsers = data?.users || [];
+
+  if (error) {
+    return (
+      <div className="p-4 bg-destructive/15 rounded-lg">
+        <p className="text-sm text-destructive">Failed to load users: {error instanceof Error ? error.message : 'Unknown error'}</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => refetch()}
+          className="mt-2"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -123,14 +148,14 @@ export function UsersTable({ className }: UsersTableProps) {
                   <Loader2 className="h-8 w-8 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
-            ) : filteredUsers?.length === 0 ? (
+            ) : filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
                   No users found.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredUsers?.map((user) => (
+              filteredUsers.map((user: SelectUser) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.id}</TableCell>
                   <TableCell className="flex items-center gap-2">
@@ -170,7 +195,7 @@ export function UsersTable({ className }: UsersTableProps) {
 
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredUsers?.length ?? 0} users
+          {data && `Showing ${filteredUsers.length} of ${data.total} users`}
         </p>
         <div className="flex gap-2">
           <Button
