@@ -64,6 +64,40 @@ router.patch("/bookings/:id", isAdmin, async (req: AuthenticatedRequest, res) =>
 });
 
 // Get admin dashboard stats with caching
+// Get users with pagination
+router.get("/users", isAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    const users = await storage.getUsers(limit, offset);
+    const totalUsers = await storage.getUsersCount();
+    
+    res.json({
+      users,
+      hasMore: offset + users.length < totalUsers
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
+// Update user role
+router.patch("/users/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { isAdmin: makeAdmin } = req.body;
+
+    await storage.updateUserRole(parseInt(id), makeAdmin);
+    res.json({ message: "User role updated successfully" });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Failed to update user" });
+  }
+});
+
 router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const now = Date.now();

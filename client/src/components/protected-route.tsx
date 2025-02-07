@@ -6,36 +6,17 @@ export function ProtectedRoute({
   path, 
   component: Component 
 }: { 
-  path: string; 
+  path: string;
   component: React.ComponentType 
 }) {
   const { user, isLoading } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const isAdminRoute = path.startsWith('/admin');
-  
-  if (!isLoading && (!user || (isAdminRoute && !user.isAdmin))) {
+
+  if (!isLoading && (!user || (isAdminRoute && !user?.isAdmin))) {
     setLocation('/auth');
     return null;
   }
 
-  return (
-    <Route path={path}>
-      {() => {
-        if (isLoading) {
-          return (
-            <div className="flex items-center justify-center min-h-screen">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          );
-        }
-
-        if (!user || (isAdminRoute && !user.isAdmin)) {
-          setLocation("/auth");
-          return null;
-        }
-
-        return <Component />;
-      }}
-    </Route>
-  );
+  return <Route path={path} component={Component} />;
 }
