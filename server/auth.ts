@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -57,7 +57,7 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
+    new LocalStrategy(async (username: string, password: string, done) => {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user) {
@@ -89,10 +89,10 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { username, password, email } = req.body;
-      
+
       // Validate required fields
       if (!username || !password || !email) {
         return res.status(400).json({ message: "Username, password and email are required" });
@@ -104,32 +104,28 @@ export function setupAuth(app: Express) {
       }
 
       // Check username format
-      if (!/^[a-zA-Z0-9_]{3,20}$/.test(req.body.username)) {
+      if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
         return res.status(400).json({ 
           message: "Username must be 3-20 characters and contain only letters, numbers and underscores" 
         });
       }
 
       // Check email format
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ message: "Invalid email format" });
       }
 
-      // Check password strength
-      if (req.body.password.length < 6) {
-        return res.status(400).json({ message: "Password must be at least 6 characters" });
-      }
-
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      const hashedPassword = await hashPassword(req.body.password);
+      const hashedPassword = await hashPassword(password);
+
       // Allow admin registration if explicitly specified and no other admin exists
       const isAdminRegistration = req.body.isAdmin === true;
       const existingAdmins = await storage.getAdminUsers();
-      
+
       const user = await storage.createUser({
         ...req.body,
         password: hashedPassword,
@@ -146,8 +142,8 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+  app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("local", (err: Error | null, user: SelectUser | false) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ message: "Invalid username or password" });
@@ -159,14 +155,14 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/user", (req: Request, res: Response) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });

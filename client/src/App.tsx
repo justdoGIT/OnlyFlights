@@ -40,7 +40,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <div className="min-h-screen flex flex-col">
-          <Navbar items={[{href: '/dashboard', label: 'Dashboard'}]} /> {/* Added dashboard link */}
+          <Navbar additionalItems={[]} />
           <main className="flex-1">
             <Router />
           </main>

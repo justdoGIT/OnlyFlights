@@ -1,19 +1,16 @@
 import { Router } from "express";
 import { storage } from "../storage";
-import type { Request } from "express";
+import type { Request, Response, NextFunction } from "express";
+import { User } from "@shared/schema";
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    username: string;
-    isAdmin: boolean;
-  };
+interface AdminRequest extends Request {
+  user?: User;
 }
 
 // Middleware to check if user is admin
-const isAdmin = (req: AuthenticatedRequest, res: any, next: any) => {
+const isAdmin = (req: AdminRequest, res: Response, next: NextFunction) => {
   if (!req.user?.isAdmin) {
     return res.status(403).json({ message: "Unauthorized" });
   }
@@ -26,18 +23,18 @@ let statsCacheTime: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Get bookings with pagination
-router.get("/bookings", isAdmin, async (req: AuthenticatedRequest, res) => {
+router.get("/bookings", isAdmin, async (req: AdminRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    const bookings = await storage.getBookings(limit, offset);
-    const totalBookings = await storage.getBookingsCount();
-    
+    const bookings = await storage.getAllBookings(limit);
+    const totalBookings = bookings.length;
+
     res.json({
-      bookings,
-      hasMore: offset + bookings.length < totalBookings
+      bookings: bookings.slice(offset, offset + limit),
+      hasMore: offset + limit < totalBookings
     });
   } catch (error) {
     console.error("Error fetching bookings:", error);
@@ -46,7 +43,7 @@ router.get("/bookings", isAdmin, async (req: AuthenticatedRequest, res) => {
 });
 
 // Update booking status
-router.patch("/bookings/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
+router.patch("/bookings/:id", isAdmin, async (req: AdminRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -55,7 +52,7 @@ router.patch("/bookings/:id", isAdmin, async (req: AuthenticatedRequest, res) =>
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    await storage.updateBookingStatus(parseInt(id), status);
+    await storage.updateBooking(parseInt(id), { status });
     res.json({ message: "Booking updated successfully" });
   } catch (error) {
     console.error("Error updating booking:", error);
@@ -63,20 +60,19 @@ router.patch("/bookings/:id", isAdmin, async (req: AuthenticatedRequest, res) =>
   }
 });
 
-// Get admin dashboard stats with caching
 // Get users with pagination
-router.get("/users", isAdmin, async (req: AuthenticatedRequest, res) => {
+router.get("/users", isAdmin, async (req: AdminRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
-    const users = await storage.getUsers(limit, offset);
-    const totalUsers = await storage.getUsersCount();
-    
+    const users = await storage.getAllUsers();
+    const totalUsers = users.length;
+
     res.json({
-      users,
-      hasMore: offset + users.length < totalUsers
+      users: users.slice(offset, offset + limit),
+      hasMore: offset + limit < totalUsers
     });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -85,12 +81,12 @@ router.get("/users", isAdmin, async (req: AuthenticatedRequest, res) => {
 });
 
 // Update user role
-router.patch("/users/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
+router.patch("/users/:id", isAdmin, async (req: AdminRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { isAdmin: makeAdmin } = req.body;
 
-    await storage.updateUserRole(parseInt(id), makeAdmin);
+    await storage.updateUser(parseInt(id), { isAdmin: makeAdmin });
     res.json({ message: "User role updated successfully" });
   } catch (error) {
     console.error("Error updating user:", error);
@@ -98,7 +94,7 @@ router.patch("/users/:id", isAdmin, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
+router.get("/stats", isAdmin, async (req: AdminRequest, res: Response) => {
   try {
     const now = Date.now();
 
@@ -123,7 +119,7 @@ router.get("/stats", isAdmin, async (req: AuthenticatedRequest, res) => {
       newEnquiries: enquiries?.filter(e => e.status === "new")?.length || 0,
       monthlyRevenue: bookings
         ?.filter(b => {
-          const bookingDate = new Date(b.createdAt);
+          const bookingDate = new Date(b.created_at);
           return bookingDate.getMonth() === currentMonth && 
                  bookingDate.getFullYear() === currentYear;
         })

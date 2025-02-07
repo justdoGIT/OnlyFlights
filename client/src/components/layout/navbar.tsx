@@ -18,7 +18,16 @@ import { cn } from "@/lib/utils";
 import { PlaneTakeoff, Hotel, Package, Phone, User } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
-export function Navbar() {
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+interface NavbarProps {
+  additionalItems?: NavItem[];
+}
+
+export function Navbar({ additionalItems = [] }: NavbarProps) {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -30,6 +39,13 @@ export function Navbar() {
   const handleNavigation = (path: string) => {
     setLocation(path);
   };
+
+  const mainNavItems = [
+    { href: "/flights", label: "Flights", icon: PlaneTakeoff },
+    { href: "/hotels", label: "Hotels", icon: Hotel },
+    { href: "/packages", label: "Packages", icon: Package },
+    { href: "/contact", label: "Contact", icon: Phone },
+  ];
 
   return (
     <nav className="border-b">
@@ -43,53 +59,31 @@ export function Navbar() {
 
         <NavigationMenu>
           <NavigationMenuList>
-            <NavigationMenuItem>
-              <NavigationMenuLink
-                className={cn(
-                  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}
-                onClick={() => handleNavigation("/flights")}
-              >
-                <PlaneTakeoff className="mr-2 h-4 w-4" />
-                Flights
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <NavigationMenuLink
-                className={cn(
-                  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}
-                onClick={() => handleNavigation("/hotels")}
-              >
-                <Hotel className="mr-2 h-4 w-4" />
-                Hotels
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <NavigationMenuLink
-                className={cn(
-                  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}
-                onClick={() => handleNavigation("/packages")}
-              >
-                <Package className="mr-2 h-4 w-4" />
-                Packages
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-
-            <NavigationMenuItem>
-              <NavigationMenuLink
-                className={cn(
-                  "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
-                )}
-                onClick={() => handleNavigation("/contact")}
-              >
-                <Phone className="mr-2 h-4 w-4" />
-                Contact
-              </NavigationMenuLink>
-            </NavigationMenuItem>
+            {mainNavItems.map((item) => (
+              <NavigationMenuItem key={item.href}>
+                <NavigationMenuLink
+                  className={cn(
+                    "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+                  )}
+                  onClick={() => handleNavigation(item.href)}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
+            {additionalItems.map((item) => (
+              <NavigationMenuItem key={item.href}>
+                <NavigationMenuLink
+                  className={cn(
+                    "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+                  )}
+                  onClick={() => handleNavigation(item.href)}
+                >
+                  {item.label}
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            ))}
           </NavigationMenuList>
         </NavigationMenu>
 
@@ -106,6 +100,11 @@ export function Navbar() {
                 <DropdownMenuItem onClick={() => handleNavigation("/dashboard")}>
                   Dashboard
                 </DropdownMenuItem>
+                {user.isAdmin && (
+                  <DropdownMenuItem onClick={() => handleNavigation("/admin/dashboard")}>
+                    Admin Dashboard
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleLogout}>
                   Logout
                 </DropdownMenuItem>
