@@ -23,17 +23,17 @@ export default function Auth() {
       if (isLogin) {
         await login(data);
       } else {
-        // Include isAdmin flag for registration
-        await register({ ...data, isAdmin: !isLogin });
+        // Regular user registration
+        await register({ ...data, isAdmin: false });
       }
       toast({
         title: "Success",
         description: isLogin ? "Logged in successfully" : "Registered successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Authentication failed",
+        description: error.message || "Authentication failed",
         variant: "destructive"
       });
     }

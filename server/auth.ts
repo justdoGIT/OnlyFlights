@@ -91,9 +91,16 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      const { username, password, email } = req.body;
+      
       // Validate required fields
-      if (!req.body.username || !req.body.password || !req.body.email) {
-        return res.status(400).json({ message: "All fields are required" });
+      if (!username || !password || !email) {
+        return res.status(400).json({ message: "Username, password and email are required" });
+      }
+
+      // Additional validation
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
       }
 
       // Check username format
