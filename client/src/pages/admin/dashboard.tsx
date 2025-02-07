@@ -13,7 +13,7 @@ import {
   Users,
   CalendarDays,
   MessagesSquare,
-  DollarSign,
+  Loader2
 } from "lucide-react";
 import {
   LineChart,
@@ -78,31 +78,25 @@ interface Analytics {
   };
 }
 
-// Memoized components for better performance
-const StatCard = React.memo(({ icon: Icon, label, value, trend }: {
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+// Memoized StatCard component
+const StatCard = React.memo(({ icon: Icon, label, value }: {
   icon: React.ElementType;
   label: string;
   value: string | number;
-  trend?: { value: number; direction: 'up' | 'down' };
 }) => (
   <Card className="p-4 flex items-center space-x-4">
     <Icon className="w-8 h-8 text-primary" />
     <div className="flex-1">
       <p className="text-sm text-muted-foreground">{label}</p>
       <h3 className="text-2xl font-bold">{value}</h3>
-      {trend && (
-        <p className={`text-sm ${trend.direction === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-          {trend.direction === 'up' ? '↑' : '↓'} {trend.value}%
-        </p>
-      )}
     </div>
   </Card>
 ));
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-const AdminDashboard = () => {
-  const [timeframe, setTimeframe] = React.useState('7d');
+const AdminDashboard: React.FC = () => {
+  const [timeframe, setTimeframe] = React.useState<'7d' | '30d' | '90d' | '1y'>('7d');
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -111,14 +105,14 @@ const AdminDashboard = () => {
     queryKey: ['/api/admin/stats'],
     staleTime: 60000,
     refetchInterval: 300000,
-    retry: 3
+    retry: 3,
   });
 
   const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery<Analytics>({
     queryKey: ['/api/admin/analytics', timeframe],
     staleTime: 60000,
     refetchInterval: 300000,
-    retry: 3
+    retry: 3,
   });
 
   React.useEffect(() => {
@@ -131,18 +125,27 @@ const AdminDashboard = () => {
   if (!user?.isAdmin) return null;
 
   if (statsError || analyticsError) {
+    const errorMessage = statsError?.message || analyticsError?.message || "Failed to load dashboard data";
     toast({
       title: "Error loading dashboard data",
-      description: statsError?.message || analyticsError?.message || "Failed to load dashboard data",
+      description: errorMessage,
       variant: "destructive"
     });
+    return (
+      <div className="container mx-auto p-4">
+        <div className="bg-destructive/15 rounded-lg p-4">
+          <p className="text-destructive">Error loading dashboard. Please try again later.</p>
+          <p className="text-sm text-destructive/80 mt-2">{errorMessage}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto p-4 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Select value={timeframe} onValueChange={setTimeframe}>
+        <Select value={timeframe} onValueChange={(value: typeof timeframe) => setTimeframe(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select timeframe" />
           </SelectTrigger>
@@ -157,31 +160,31 @@ const AdminDashboard = () => {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsLoading || !stats ? (
+        {statsLoading ? (
           Array(4).fill(null).map((_, i) => (
             <Skeleton key={i} className="h-[100px]" />
           ))
-        ) : (
+        ) : stats && (
           <>
             <StatCard
-              icon={DollarSign}
+              icon={Loader2}
               label="Monthly Revenue"
-              value={`$${stats?.monthlyRevenue ?? '0.00'}`}
+              value={`$${stats.monthlyRevenue}`}
             />
             <StatCard
               icon={Users}
               label="Total Users"
-              value={stats?.totalUsers ?? 0}
+              value={stats.totalUsers}
             />
             <StatCard
               icon={CalendarDays}
               label="Active Bookings"
-              value={stats?.activeBookings ?? 0}
+              value={stats.activeBookings}
             />
             <StatCard
               icon={MessagesSquare}
               label="New Enquiries"
-              value={stats?.newEnquiries ?? 0}
+              value={stats.newEnquiries}
             />
           </>
         )}
@@ -192,13 +195,11 @@ const AdminDashboard = () => {
         <ResizablePanel defaultSize={25}>
           <div className="p-4 h-full">
             <h2 className="text-lg font-semibold mb-4">Booking Status</h2>
-            {analyticsLoading || !analytics ? (
-              <Skeleton className="h-[300px]" />
-            ) : (
+            {!analyticsLoading && analytics ? (
               <ResponsiveContainer width="100%" height={300}>
                 <RePieChart>
                   <Pie
-                    data={Object.entries(analytics.trends.bookingStatus ?? {}).map(([name, value]) => ({
+                    data={Object.entries(analytics.trends.bookingStatus).map(([name, value]) => ({
                       name,
                       value
                     }))}
@@ -214,6 +215,8 @@ const AdminDashboard = () => {
                   <Tooltip />
                 </RePieChart>
               </ResponsiveContainer>
+            ) : (
+              <Skeleton className="h-[300px]" />
             )}
           </div>
         </ResizablePanel>
@@ -223,9 +226,7 @@ const AdminDashboard = () => {
         <ResizablePanel defaultSize={75}>
           <div className="p-4 h-full">
             <h2 className="text-lg font-semibold mb-4">Revenue Trend</h2>
-            {analyticsLoading || !analytics ? (
-              <Skeleton className="h-[300px]" />
-            ) : (
+            {!analyticsLoading && analytics ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={analytics.trends.revenue}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -240,12 +241,12 @@ const AdminDashboard = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            ) : (
+              <Skeleton className="h-[300px]" />
             )}
 
             <h2 className="text-lg font-semibold my-4">User Growth</h2>
-            {analyticsLoading || !analytics ? (
-              <Skeleton className="h-[300px]" />
-            ) : (
+            {!analyticsLoading && analytics ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={analytics.trends.userGrowth}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -255,6 +256,8 @@ const AdminDashboard = () => {
                   <Bar dataKey="count" fill="#82ca9d" />
                 </BarChart>
               </ResponsiveContainer>
+            ) : (
+              <Skeleton className="h-[300px]" />
             )}
           </div>
         </ResizablePanel>
