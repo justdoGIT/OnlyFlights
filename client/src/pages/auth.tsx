@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const { toast } = useToast();
-  const { login, register } = useAuth();
+  const { loginMutation, registerMutation } = useAuth();
   const form = useForm({
     defaultValues: {
       username: "",
@@ -21,10 +21,10 @@ export default function Auth() {
   const onSubmit = async (data: any) => {
     try {
       if (isLogin) {
-        await login(data);
+        await loginMutation.mutateAsync(data);
       } else {
         // Regular user registration
-        await register({ ...data, isAdmin: false });
+        await registerMutation.mutateAsync({ ...data, isAdmin: false });
       }
       toast({
         title: "Success",
