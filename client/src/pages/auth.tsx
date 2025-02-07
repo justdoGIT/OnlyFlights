@@ -17,14 +17,14 @@ export default function Auth() {
 
   const form = useForm({
     resolver: zodResolver(
-      isLogin
+      isLogin 
         ? insertUserSchema.pick({ username: true, password: true })
-        : insertUserSchema.omit({ isAdmin: true, created_at: true, updated_at: true })
+        : insertUserSchema.pick({ username: true, password: true, email: true })
     ),
     defaultValues: {
       username: "",
       password: "",
-      email: ""
+      email: "",
     }
   });
 
@@ -42,14 +42,16 @@ export default function Auth() {
         });
       } else {
         await registerMutation.mutateAsync({
-          ...data,
-          isAdmin: false // Regular users can't register as admin
+          username: data.username,
+          password: data.password,
+          email: data.email
         });
       }
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Authentication failed",
+        title: isLogin ? "Login failed" : "Registration failed",
+        description: error.message || (isLogin ? "Invalid credentials" : "Registration failed"),
         variant: "destructive"
       });
     }
@@ -109,6 +111,9 @@ export default function Auth() {
               disabled={loginMutation.isPending || registerMutation.isPending}
             >
               {isLogin ? "Login" : "Register"}
+              {(loginMutation.isPending || registerMutation.isPending) && (
+                <span className="ml-2">...</span>
+              )}
             </Button>
           </form>
 

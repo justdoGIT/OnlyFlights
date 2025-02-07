@@ -14,10 +14,19 @@ type AuthContextType = {
   error: Error | null;
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  registerMutation: UseMutationResult<SelectUser, Error, RegisterData>;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
+type LoginData = {
+  username: string;
+  password: string;
+};
+
+type RegisterData = {
+  username: string;
+  password: string;
+  email: string;
+};
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -59,9 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const registerMutation = useMutation<SelectUser, Error, InsertUser>({
-    mutationFn: async (credentials) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
+  const registerMutation = useMutation<SelectUser, Error, RegisterData>({
+    mutationFn: async (data) => {
+      const res = await apiRequest("POST", "/api/register", data);
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Registration failed");
@@ -110,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user ?? null,
         isLoading,
         error,
         loginMutation,

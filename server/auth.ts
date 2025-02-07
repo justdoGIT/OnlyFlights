@@ -61,14 +61,12 @@ export function setupAuth(app: Express) {
       try {
         const user = await storage.getUserByUsername(username);
         if (!user) {
-          console.log("User not found:", username);
-          return done(null, false);
+          return done(null, false, { message: "Invalid username or password" });
         }
 
         const isValid = await comparePasswords(password, user.password);
         if (!isValid) {
-          console.log("Invalid password for user:", username);
-          return done(null, false);
+          return done(null, false, { message: "Invalid username or password" });
         }
 
         return done(null, user);
@@ -76,20 +74,23 @@ export function setupAuth(app: Express) {
         console.error("Error in LocalStrategy:", err);
         return done(err);
       }
-    }),
+    })
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (err) {
       done(err);
     }
   });
 
-  app.post("/api/register", async (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/register", async (req: Request, res: Response) => {
     try {
       const { username, password, email } = req.body;
 
@@ -98,72 +99,71 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username, password and email are required" });
       }
 
-      // Additional validation
-      if (password.length < 6) {
-        return res.status(400).json({ message: "Password must be at least 6 characters" });
-      }
-
-      // Check username format
-      if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-        return res.status(400).json({ 
-          message: "Username must be 3-20 characters and contain only letters, numbers and underscores" 
-        });
-      }
-
-      // Check email format
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({ message: "Invalid email format" });
-      }
-
+      // Check if user exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
+      // Hash password
       const hashedPassword = await hashPassword(password);
 
-      // Allow admin registration if explicitly specified and no other admin exists
-      const isAdminRegistration = req.body.isAdmin === true;
+      // Check if this is the first user to make them admin
       const existingAdmins = await storage.getAdminUsers();
+      const isFirstUser = existingAdmins.length === 0;
 
+      // Create user with admin privileges if first user
       const user = await storage.createUser({
-        ...req.body,
+        username,
         password: hashedPassword,
-        isAdmin: isAdminRegistration && existingAdmins.length === 0
+        email,
+        isAdmin: isFirstUser,
       });
 
+      // Log the user in after registration
       req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
+        if (err) {
+          console.error("Login error after registration:", err);
+          return res.status(500).json({ message: "Registration successful but login failed" });
+        }
+        return res.status(201).json(user);
       });
-    } catch (err) {
-      console.error("Registration error:", err);
+    } catch (error) {
+      console.error("Registration error:", error);
       res.status(500).json({ message: "Registration failed" });
     }
   });
 
   app.post("/api/login", (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate("local", (err: Error | null, user: SelectUser | false) => {
-      if (err) return next(err);
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: any) => {
+      if (err) {
+        console.error("Login error:", err);
+        return next(err);
+      }
       if (!user) {
-        return res.status(401).json({ message: "Invalid username or password" });
+        return res.status(401).json({ message: info?.message || "Invalid credentials" });
       }
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json(user);
+        res.json(user);
       });
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req: Request, res: Response, next: NextFunction) => {
+  app.post("/api/logout", (req: Request, res: Response) => {
     req.logout((err) => {
-      if (err) return next(err);
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
       res.sendStatus(200);
     });
   });
 
   app.get("/api/user", (req: Request, res: Response) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
     res.json(req.user);
   });
 }
