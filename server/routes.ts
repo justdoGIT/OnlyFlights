@@ -6,32 +6,59 @@ import { z } from "zod";
 import { setupAuth } from "./auth";
 import { sendEmail, generateBookingConfirmationEmail } from "./services/email";
 import adminRoutes from "./routes/admin";
+import type { Request, Response, NextFunction } from "express";
+import { User } from "@shared/schema";
+
+// Extend Request type to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
+
+// Middleware to ensure user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  next();
+};
 
 export function registerRoutes(app: Express): Server {
   // Set up authentication routes and middleware
   setupAuth(app);
 
-  // Register admin routes
-  app.use('/api/admin', adminRoutes);
+  // Register admin routes with authentication
+  app.use('/api/admin', isAuthenticated, adminRoutes);
 
-  app.post('/api/bookings', async (req, res) => {
+  // Protected booking routes
+  app.get('/api/bookings', isAuthenticated, async (req, res) => {
+    try {
+      const bookings = await storage.getBookingsByUser(req.user!.id);
+      res.json(bookings);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/bookings', isAuthenticated, async (req, res) => {
     try {
       const booking = insertBookingSchema.parse(req.body);
       const result = await storage.createBooking(booking);
 
-      // Parse booking details to get the main contact email
-      const bookingDetails = JSON.parse(result.details);
-      const emailTo = bookingDetails.mainContactEmail || booking.email;
-
       // Send confirmation email
-      const emailSent = await sendEmail({
-        to: emailTo,
-        subject: 'Your OnlyFlights Booking Confirmation',
-        html: await generateBookingConfirmationEmail(result)
-      });
-
-      if (!emailSent) {
-        console.warn('Failed to send confirmation email for booking:', result.id);
+      const emailTo = req.user!.email;
+      try {
+        await sendEmail({
+          to: emailTo,
+          subject: 'Your OnlyFlights Booking Confirmation',
+          html: await generateBookingConfirmationEmail(result)
+        });
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
       }
 
       res.json(result);
@@ -45,19 +72,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get('/api/bookings', async (req, res) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-      const bookings = await storage.getBookingsByUser(req.user.id);
-      res.json(bookings);
-    } catch (err) {
-      console.error('Error fetching bookings:', err);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
-
+  // Public enquiry route
   app.post('/api/enquiries', async (req, res) => {
     try {
       const enquiry = insertEnquirySchema.parse(req.body);

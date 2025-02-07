@@ -26,6 +26,7 @@ export interface IStorage {
   getAllBookings(limit?: number, offset?: number): Promise<Booking[]>;
   updateBookingStatus(id: number, status: string): Promise<Booking>;
   getBooking(id: number): Promise<Booking | undefined>;
+  updateBooking(id: number, data: Partial<InsertBooking>): Promise<Booking>; //Added here
 
   // Enquiry operations
   createEnquiry(enquiry: InsertEnquiry): Promise<Enquiry>;
@@ -191,6 +192,28 @@ export class DatabaseStorage implements IStorage {
       return booking;
     } catch (error) {
       console.error("Error getting booking:", error);
+      throw error;
+    }
+  }
+
+  async updateBooking(id: number, data: Partial<InsertBooking>): Promise<Booking> { //Added here
+    try {
+      const [updated] = await db
+        .update(bookings)
+        .set({
+          ...data,
+          updated_at: new Date()
+        })
+        .where(eq(bookings.id, id))
+        .returning();
+
+      if (!updated) {
+        throw new Error("Booking not found");
+      }
+
+      return updated;
+    } catch (error) {
+      console.error("Error updating booking:", error);
       throw error;
     }
   }
