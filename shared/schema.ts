@@ -40,12 +40,25 @@ export const enquiries = pgTable("enquiries", {
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Base schemas
+export const flights = pgTable("flights", {
+  id: serial("id").primaryKey(),
+  from: text("from").notNull(),
+  to: text("to").notNull(),
+  departureTime: text("departure_time").notNull(),
+  arrivalTime: text("arrival_time").notNull(),
+  airline: text("airline").notNull(),
+  price: integer("price").notNull(),
+  duration: text("duration").notNull(),
+  stops: integer("stops").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
 const baseUserSchema = createInsertSchema(users);
 const baseBookingSchema = createInsertSchema(bookings);
 const baseEnquirySchema = createInsertSchema(enquiries);
+const baseFlightSchema = createInsertSchema(flights);
 
-// Extended schemas with validation
 export const insertUserSchema = baseUserSchema.extend({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -75,10 +88,22 @@ export const insertEnquirySchema = baseEnquirySchema.extend({
   status: z.string().default("new"),
 });
 
-// Types
+export const insertFlightSchema = baseFlightSchema.extend({
+  from: z.string().min(1, "Departure city is required"),
+  to: z.string().min(1, "Arrival city is required"),
+  departureTime: z.string().min(1, "Departure time is required"),
+  arrivalTime: z.string().min(1, "Arrival time is required"),
+  airline: z.string().min(1, "Airline is required"),
+  price: z.number().int().positive("Price must be positive"),
+  duration: z.string().min(1, "Duration is required"),
+  stops: z.number().int().min(0, "Stops cannot be negative"),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Enquiry = typeof enquiries.$inferSelect;
 export type InsertEnquiry = z.infer<typeof insertEnquirySchema>;
+export type Flight = typeof flights.$inferSelect;
+export type InsertFlight = z.infer<typeof insertFlightSchema>;

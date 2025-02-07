@@ -1,14 +1,4 @@
-export interface Flight {
-  id: number;
-  from: string;
-  to: string;
-  departureTime: string;
-  arrivalTime: string;
-  airline: string;
-  price: number;
-  duration: string;
-  stops: number;
-}
+import type { Flight } from "@/types/flight";
 
 export const flights: Flight[] = [
   {

@@ -1,13 +1,3 @@
-interface Flight {
-  id: number;
-  from: string;
-  to: string;
-  airline: string;
-  price: number;
-  stops: number;
-  travelers?: number;
-}
-
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,8 +24,12 @@ import { Slider } from "@/components/ui/slider";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, PlaneTakeoff, Check, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { flights, popularCities } from "@/data/flights";
+import { popularCities } from "@/data/flights";
 import { FlightCard } from "@/components/flight-card";
+import type { Flight } from "@/types/flight";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "@/components/ui/loader"; // Added import for Loader2
+
 
 export function FlightSearch() {
   const [tripType, setTripType] = useState("round");
@@ -50,19 +44,26 @@ export function FlightSearch() {
   const [maxStops, setMaxStops] = useState<string>("any");
   const [showFilters, setShowFilters] = useState(false);
 
+  const { data: flights = [], isLoading, isError } = useQuery<Flight[]>({
+    queryKey: ['/api/flights'],
+    enabled: showResults,
+  });
+
   const airlines = useMemo(() => {
     return Array.from(new Set(flights.map(flight => flight.airline)));
-  }, []);
+  }, [flights]);
 
   const maxPrice = useMemo(() => {
     return Math.max(...flights.map(flight => flight.price));
-  }, []);
+  }, [flights]);
 
   useEffect(() => {
-    setPriceRange([0, maxPrice]);
-  }, [maxPrice]);
+    if (flights.length > 0) {
+      setPriceRange([0, maxPrice]);
+    }
+  }, [maxPrice, flights]);
 
-  const [searchResults, setSearchResults] = useState<Flight[]>(flights);
+  const [searchResults, setSearchResults] = useState<Flight[]>([]);
 
   const handleSearch = () => {
     const results = flights.filter(flight => {
@@ -325,11 +326,30 @@ export function FlightSearch() {
         <div className="mt-8 space-y-4 max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Available Flights</h2>
-            <p className="text-sm text-gray-500">
-              {searchResults.length} {searchResults.length === 1 ? 'flight' : 'flights'} found
-            </p>
+            {isLoading ? (
+              <p className="text-sm text-gray-500">Loading...</p>
+            ) : isError ? (
+              <p className="text-sm text-red-500">Error fetching flights.</p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                {searchResults.length} {searchResults.length === 1 ? 'flight' : 'flights'} found
+              </p>
+            )}
           </div>
-          {searchResults.length > 0 ? (
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                <p className="text-gray-500 mt-2">Loading flights...</p>
+              </CardContent>
+            </Card>
+          ) : isError ? (
+            <Card>
+              <CardContent className="p-6 text-center text-red-500">
+                Error fetching flights.
+              </CardContent>
+            </Card>
+          ) : searchResults.length > 0 ? (
             searchResults.map((flight) => (
               <FlightCard
                 key={flight.id}

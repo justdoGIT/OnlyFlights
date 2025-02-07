@@ -33,6 +33,17 @@ export function registerRoutes(app: Express): Server {
   // Register admin routes with authentication
   app.use('/api/admin', isAuthenticated, adminRoutes);
 
+  // Add flights route
+  app.get('/api/flights', async (req, res) => {
+    try {
+      const flights = await storage.getAllFlights();
+      res.json(flights);
+    } catch (err) {
+      console.error('Error fetching flights:', err);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Protected booking routes
   app.get('/api/bookings', isAuthenticated, async (req, res) => {
     try {

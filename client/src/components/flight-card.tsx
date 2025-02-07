@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Clock, Ban } from "lucide-react";
 import { useLocation } from "wouter";
-import type { Flight } from "@/data/flights";
+import type { Flight } from "@/types/flight";
 
 interface FlightCardProps {
   flight: Flight;
