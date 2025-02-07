@@ -10,14 +10,13 @@ export function ProtectedRoute({
   component: React.ComponentType 
 }) {
   const { user, isLoading } = useAuth();
-  const isAdminRoute = location.startsWith('/admin');
-  
-  if (!isLoading && (!user || (isAdminRoute && !user.isAdmin))) {
-    navigate('/auth');
-    return null;
-  }
   const [location, setLocation] = useLocation();
   const isAdminRoute = path.startsWith('/admin');
+  
+  if (!isLoading && (!user || (isAdminRoute && !user.isAdmin))) {
+    setLocation('/auth');
+    return null;
+  }
 
   return (
     <Route path={path}>
