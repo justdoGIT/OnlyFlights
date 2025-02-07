@@ -1,4 +1,14 @@
-import { useState, useMemo } from "react";
+interface Flight {
+  id: number;
+  from: string;
+  to: string;
+  airline: string;
+  price: number;
+  stops: number;
+  travelers?: number;
+}
+
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,11 +58,11 @@ export function FlightSearch() {
     return Math.max(...flights.map(flight => flight.price));
   }, []);
 
-  useState(() => {
+  useEffect(() => {
     setPriceRange([0, maxPrice]);
   }, [maxPrice]);
 
-  const [searchResults, setSearchResults] = useState(flights);
+  const [searchResults, setSearchResults] = useState<Flight[]>(flights);
 
   const handleSearch = () => {
     const results = flights.filter(flight => {
@@ -321,9 +331,9 @@ export function FlightSearch() {
           </div>
           {searchResults.length > 0 ? (
             searchResults.map((flight) => (
-              <FlightCard 
-                key={flight.id} 
-                flight={{...flight, travelers}} 
+              <FlightCard
+                key={flight.id}
+                flight={{ ...flight, travelers }}
               />
             ))
           ) : (

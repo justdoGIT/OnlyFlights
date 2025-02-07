@@ -20,7 +20,7 @@ const paymentSchema = z.object({
   cvv: z.string().min(3, "CVV must be 3 digits").max(3),
 });
 
-type PaymentFormData = z.infer<typeof paymentSchema>;
+export type PaymentFormData = z.infer<typeof paymentSchema>;
 
 interface PaymentFormProps {
   amount: number;
