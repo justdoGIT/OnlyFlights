@@ -26,12 +26,31 @@ export function FlightCard({ flight }: FlightCardProps) {
       return;
     }
 
+    // Validate flight details before proceeding
+    if (!flight.id || !flight.from || !flight.to || !flight.price) {
+      toast({
+        title: "Booking Error",
+        description: "Invalid flight details. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Store booking details in sessionStorage to persist through navigation
-    sessionStorage.setItem('bookingDetails', JSON.stringify({
-      ...flight,
-      type: 'flight'
-    }));
-    setLocation("/booking");
+    try {
+      sessionStorage.setItem('bookingDetails', JSON.stringify({
+        ...flight,
+        type: 'flight',
+        travelers: flight.travelers || 1
+      }));
+      setLocation("/booking");
+    } catch (error) {
+      toast({
+        title: "Booking Error",
+        description: "Failed to initiate booking. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -39,7 +58,9 @@ export function FlightCard({ flight }: FlightCardProps) {
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="text-lg font-semibold">{flight.airline}</div>
-          <div className="text-2xl font-bold text-primary">${flight.price}</div>
+          <div className="text-2xl font-bold text-primary">
+            ${flight.price.toFixed(2)}
+          </div>
         </div>
 
         <div className="flex items-center justify-between mb-6">
@@ -78,7 +99,10 @@ export function FlightCard({ flight }: FlightCardProps) {
               </>
             )}
           </div>
-          <Button onClick={handleBooking}>
+          <Button 
+            onClick={handleBooking}
+            className="transition-all hover:scale-105"
+          >
             Book Now
           </Button>
         </div>

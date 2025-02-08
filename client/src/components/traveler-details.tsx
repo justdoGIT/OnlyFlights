@@ -14,15 +14,23 @@ import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const travelerSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string()
+    .min(1, "First name is required")
+    .regex(/^[a-zA-Z\s]+$/, "First name can only contain letters and spaces"),
+  lastName: z.string()
+    .min(1, "Last name is required")
+    .regex(/^[a-zA-Z\s]+$/, "Last name can only contain letters and spaces"),
   dateOfBirth: z.string()
     .min(1, "Date of birth is required")
     .refine((date) => {
       const birthDate = new Date(date);
       const today = new Date();
-      return birthDate < today;
-    }, "Date of birth must be in the past"),
+      const minAge = new Date();
+      minAge.setFullYear(today.getFullYear() - 2); // Minimum age of 2 years
+      const maxAge = new Date();
+      maxAge.setFullYear(today.getFullYear() - 120); // Maximum age of 120 years
+      return birthDate <= minAge && birthDate >= maxAge;
+    }, "Invalid date of birth. Traveler must be between 2 and 120 years old"),
   passportNumber: z.string()
     .min(1, "Passport number is required")
     .regex(/^[A-Z0-9]+$/, "Passport number must contain only uppercase letters and numbers")
@@ -71,9 +79,13 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
                   name={`travelers.${index}.firstName`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>First Name (as in passport)</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field}
+                          placeholder="John"
+                          autoCapitalize="words"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -84,9 +96,13 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
                   name={`travelers.${index}.lastName`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>Last Name (as in passport)</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field}
+                          placeholder="Doe"
+                          autoCapitalize="words"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -99,7 +115,11 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
                     <FormItem>
                       <FormLabel>Date of Birth</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input 
+                          type="date"
+                          {...field}
+                          max={new Date().toISOString().split('T')[0]}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -112,7 +132,15 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
                     <FormItem>
                       <FormLabel>Passport Number</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input 
+                          {...field}
+                          placeholder="AB1234567"
+                          autoCapitalize="characters"
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
+                            field.onChange(value);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -125,6 +153,10 @@ export function TravelerDetails({ numberOfTravelers, onSubmit }: TravelerDetails
         <Button type="submit" className="w-full">
           Continue to Payment
         </Button>
+
+        <p className="text-sm text-gray-500 text-center mt-2">
+          Please ensure all details match your travel documents exactly
+        </p>
       </form>
     </Form>
   );

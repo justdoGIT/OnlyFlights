@@ -29,7 +29,6 @@ import { FlightCard } from "@/components/flight-card";
 import type { Flight } from "@/types/flight";
 import { useQuery } from "@tanstack/react-query";
 
-
 export function FlightSearch() {
   const [tripType, setTripType] = useState("round");
   const [departDate, setDepartDate] = useState<Date>();
@@ -42,6 +41,7 @@ export function FlightSearch() {
   const [selectedAirline, setSelectedAirline] = useState<string>("any");
   const [maxStops, setMaxStops] = useState<string>("any");
   const [showFilters, setShowFilters] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const { data: flights = [], isLoading, isError } = useQuery<Flight[]>({
     queryKey: ['/api/flights'],
@@ -62,9 +62,42 @@ export function FlightSearch() {
     }
   }, [maxPrice, flights]);
 
+  const validateSearch = () => {
+    if (!from) {
+      setSearchError("Please select a departure city");
+      return false;
+    }
+    if (!to) {
+      setSearchError("Please select an arrival city");
+      return false;
+    }
+    if (!departDate) {
+      setSearchError("Please select a departure date");
+      return false;
+    }
+    if (tripType === "round" && !returnDate) {
+      setSearchError("Please select a return date");
+      return false;
+    }
+    if (tripType === "round" && returnDate && departDate > returnDate) {
+      setSearchError("Return date must be after departure date");
+      return false;
+    }
+    if (travelers < 1 || travelers > 9) {
+      setSearchError("Number of travelers must be between 1 and 9");
+      return false;
+    }
+    setSearchError(null);
+    return true;
+  };
+
   const [searchResults, setSearchResults] = useState<Flight[]>([]);
 
   const handleSearch = () => {
+    if (!validateSearch()) {
+      return;
+    }
+
     const results = flights.filter(flight => {
       const matchesRoute = (!from || flight.from.toLowerCase().includes(from.toLowerCase())) &&
         (!to || flight.to.toLowerCase().includes(to.toLowerCase()));
@@ -90,6 +123,12 @@ export function FlightSearch() {
       <Card className="w-full max-w-4xl mx-auto">
         <CardContent className="p-6">
           <div className="space-y-6">
+            {searchError && (
+              <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
+                {searchError}
+              </div>
+            )}
+
             <div>
               <RadioGroup
                 defaultValue="round"
@@ -115,7 +154,10 @@ export function FlightSearch() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between h-10"
+                      className={cn(
+                        "w-full justify-between h-10",
+                        !from && "text-muted-foreground"
+                      )}
                     >
                       {from || "Select departure city"}
                     </Button>
@@ -128,7 +170,10 @@ export function FlightSearch() {
                         {popularCities.map((city) => (
                           <CommandItem
                             key={city}
-                            onSelect={() => setFrom(city)}
+                            onSelect={() => {
+                              setFrom(city);
+                              setSearchError(null);
+                            }}
                             className="cursor-pointer"
                           >
                             <Check
@@ -153,7 +198,10 @@ export function FlightSearch() {
                     <Button
                       variant="outline"
                       role="combobox"
-                      className="w-full justify-between h-10"
+                      className={cn(
+                        "w-full justify-between h-10",
+                        !to && "text-muted-foreground"
+                      )}
                     >
                       {to || "Select arrival city"}
                     </Button>
@@ -166,7 +214,10 @@ export function FlightSearch() {
                         {popularCities.map((city) => (
                           <CommandItem
                             key={city}
-                            onSelect={() => setTo(city)}
+                            onSelect={() => {
+                              setTo(city);
+                              setSearchError(null);
+                            }}
                             className="cursor-pointer"
                           >
                             <Check
@@ -196,6 +247,7 @@ export function FlightSearch() {
                         "w-full justify-start text-left h-10",
                         !departDate && "text-muted-foreground"
                       )}
+                      onClick={() => setSearchError(null)}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {departDate ? format(departDate, "PPP") : "Pick a date"}
@@ -206,6 +258,7 @@ export function FlightSearch() {
                       mode="single"
                       selected={departDate}
                       onSelect={setDepartDate}
+                      disabled={(date) => date < new Date()}
                       initialFocus
                     />
                   </PopoverContent>
@@ -223,6 +276,7 @@ export function FlightSearch() {
                           "w-full justify-start text-left h-10",
                           !returnDate && "text-muted-foreground"
                         )}
+                        onClick={() => setSearchError(null)}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {returnDate ? format(returnDate, "PPP") : "Pick a date"}
@@ -233,6 +287,7 @@ export function FlightSearch() {
                         mode="single"
                         selected={returnDate}
                         onSelect={setReturnDate}
+                        disabled={(date) => date < (departDate || new Date())}
                         initialFocus
                       />
                     </PopoverContent>
@@ -247,7 +302,10 @@ export function FlightSearch() {
                   min="1"
                   max="9"
                   value={travelers}
-                  onChange={(e) => setTravelers(parseInt(e.target.value) || 1)}
+                  onChange={(e) => {
+                    setTravelers(parseInt(e.target.value) || 1);
+                    setSearchError(null);
+                  }}
                   className="h-10"
                 />
               </div>
@@ -268,7 +326,7 @@ export function FlightSearch() {
                   <Label>Price Range (${priceRange[0]} - ${priceRange[1]})</Label>
                   <Slider
                     min={0}
-                    max={maxPrice}
+                    max={maxPrice || 1000}
                     step={50}
                     value={priceRange}
                     onValueChange={setPriceRange}
@@ -313,9 +371,23 @@ export function FlightSearch() {
               </div>
             )}
 
-            <Button className="w-full" size="lg" onClick={handleSearch}>
-              <PlaneTakeoff className="mr-2 h-5 w-5" />
-              Search Flights
+            <Button 
+              className="w-full" 
+              size="lg" 
+              onClick={handleSearch}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <PlaneTakeoff className="mr-2 h-5 w-5" />
+                  Search Flights
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
@@ -335,14 +407,21 @@ export function FlightSearch() {
               </p>
             )}
           </div>
+
           {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-24 bg-gray-200 rounded-md" />
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : isError ? (
             <Card>
               <CardContent className="p-6 text-center text-red-500">
-                Error fetching flights.
+                Error fetching flights. Please try again later.
               </CardContent>
             </Card>
           ) : searchResults.length > 0 ? (
@@ -355,7 +434,8 @@ export function FlightSearch() {
           ) : (
             <Card>
               <CardContent className="p-6 text-center text-gray-500">
-                No flights found for your search criteria.
+                No flights found matching your search criteria.
+                Try adjusting your filters or search parameters.
               </CardContent>
             </Card>
           )}

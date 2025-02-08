@@ -3,11 +3,10 @@ import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { TravelerDetails } from "@/components/traveler-details";
 import { PaymentForm } from "@/components/payment-form";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 import type { PaymentFormData } from "@/components/payment-form";
 import type { Flight } from "@/types/flight";
 
@@ -17,12 +16,12 @@ interface BookingData {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  details: string;
   status: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  details: string;
   travelers: Array<{
     firstName: string;
     lastName: string;
@@ -48,35 +47,50 @@ export default function Booking() {
       return;
     }
 
-    const details = JSON.parse(storedDetails);
-    if (details.type !== 'flight') {
-      navigate('/flights');
-      return;
-    }
+    try {
+      const details = JSON.parse(storedDetails);
+      if (details.type !== 'flight') {
+        throw new Error('Invalid booking type');
+      }
 
-    setBookingDetails(details);
-    setBookingData({
-      type: 'flight',
-      itemId: details.id,
-      startDate: details.departureTime,
-      endDate: details.arrivalTime,
-      totalPrice: details.price * (details.travelers || 1),
-      status: 'pending',
-      firstName: '',
-      lastName: '',
-      email: user?.email || '',
-      phone: '',
-      details: JSON.stringify({
-        from: details.from,
-        to: details.to,
-        airline: details.airline,
-        departureTime: details.departureTime,
-        arrivalTime: details.arrivalTime,
-        travelers: details.travelers || 1
-      }),
-      travelers: []
-    });
-  }, [navigate, user]);
+      // Validate required fields
+      if (!details.id || !details.from || !details.to || !details.departureTime || 
+          !details.arrivalTime || !details.airline || !details.price) {
+        throw new Error('Missing required flight details');
+      }
+
+      setBookingDetails(details);
+      setBookingData({
+        type: 'flight',
+        itemId: details.id,
+        startDate: details.departureTime,
+        endDate: details.arrivalTime,
+        totalPrice: details.price * (details.travelers || 1),
+        status: 'pending',
+        firstName: '',
+        lastName: '',
+        email: user?.email || '',
+        phone: '',
+        details: JSON.stringify({
+          from: details.from,
+          to: details.to,
+          airline: details.airline,
+          departureTime: details.departureTime,
+          arrivalTime: details.arrivalTime,
+          price: details.price,
+          travelers: details.travelers || 1
+        }),
+        travelers: []
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Invalid booking details. Please try again.",
+        variant: "destructive"
+      });
+      navigate('/flights');
+    }
+  }, [navigate, user, toast]);
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: BookingData) => {
@@ -100,16 +114,16 @@ export default function Booking() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       toast({
-        title: "Success",
-        description: "Booking confirmed successfully!"
+        title: "Booking Confirmed",
+        description: "Your flight has been booked successfully! Check your email for confirmation details.",
       });
       sessionStorage.removeItem('bookingDetails');
       navigate("/dashboard");
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to complete booking",
+        title: "Booking Failed",
+        description: error.message || "Failed to complete booking. Please try again.",
         variant: "destructive"
       });
     }
@@ -125,7 +139,14 @@ export default function Booking() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Complete Your Booking</h1>
+          <p className="text-gray-600">
+            {bookingDetails.from} → {bookingDetails.to} • {bookingDetails.airline}
+          </p>
+        </div>
+
         {step === 1 && (
           <TravelerDetails
             numberOfTravelers={bookingDetails.travelers || 1}
@@ -156,6 +177,10 @@ export default function Booking() {
             isSubmitting={createBookingMutation.isPending}
           />
         )}
+
+        <div className="mt-4 text-sm text-gray-500">
+          <p>Need help? Contact our support team</p>
+        </div>
       </Card>
     </div>
   );
