@@ -22,13 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlaneTakeoff, Check, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, PlaneTakeoff, Check, Filter, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { popularCities } from "@/data/flights";
 import { FlightCard } from "@/components/flight-card";
 import type { Flight } from "@/types/flight";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "@/components/ui/loader"; // Added import for Loader2
 
 
 export function FlightSearch() {
@@ -327,7 +326,7 @@ export function FlightSearch() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Available Flights</h2>
             {isLoading ? (
-              <p className="text-sm text-gray-500">Loading...</p>
+              <Loader2 className="h-6 w-6 animate-spin" />
             ) : isError ? (
               <p className="text-sm text-red-500">Error fetching flights.</p>
             ) : (
@@ -337,12 +336,9 @@ export function FlightSearch() {
             )}
           </div>
           {isLoading ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                <p className="text-gray-500 mt-2">Loading flights...</p>
-              </CardContent>
-            </Card>
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
           ) : isError ? (
             <Card>
               <CardContent className="p-6 text-center text-red-500">

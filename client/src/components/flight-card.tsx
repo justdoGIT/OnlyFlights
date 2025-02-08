@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlaneTakeoff, Clock, Ban } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import type { Flight } from "@/types/flight";
 
 interface FlightCardProps {
@@ -10,8 +12,20 @@ interface FlightCardProps {
 
 export function FlightCard({ flight }: FlightCardProps) {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleBooking = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to book a flight",
+        variant: "destructive"
+      });
+      setLocation("/auth");
+      return;
+    }
+
     // Store booking details in sessionStorage to persist through navigation
     sessionStorage.setItem('bookingDetails', JSON.stringify({
       ...flight,

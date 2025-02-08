@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser,
   bookings, type Booking, type InsertBooking,
   enquiries, type Enquiry, type InsertEnquiry,
+  flights, type Flight, type InsertFlight,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -26,7 +27,11 @@ export interface IStorage {
   getAllBookings(limit?: number, offset?: number): Promise<Booking[]>;
   updateBookingStatus(id: number, status: string): Promise<Booking>;
   getBooking(id: number): Promise<Booking | undefined>;
-  updateBooking(id: number, data: Partial<InsertBooking>): Promise<Booking>; //Added here
+  updateBooking(id: number, data: Partial<InsertBooking>): Promise<Booking>;
+
+  // Flight operations
+  getAllFlights(): Promise<Flight[]>;
+  getFlightById(id: number): Promise<Flight | undefined>;
 
   // Enquiry operations
   createEnquiry(enquiry: InsertEnquiry): Promise<Enquiry>;
@@ -196,7 +201,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateBooking(id: number, data: Partial<InsertBooking>): Promise<Booking> { //Added here
+  async updateBooking(id: number, data: Partial<InsertBooking>): Promise<Booking> {
     try {
       const [updated] = await db
         .update(bookings)
@@ -214,6 +219,26 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } catch (error) {
       console.error("Error updating booking:", error);
+      throw error;
+    }
+  }
+
+  // Flight operations
+  async getAllFlights(): Promise<Flight[]> {
+    try {
+      return await db.select().from(flights);
+    } catch (error) {
+      console.error("Error getting all flights:", error);
+      throw error;
+    }
+  }
+
+  async getFlightById(id: number): Promise<Flight | undefined> {
+    try {
+      const [flight] = await db.select().from(flights).where(eq(flights.id, id));
+      return flight;
+    } catch (error) {
+      console.error("Error getting flight by id:", error);
       throw error;
     }
   }
