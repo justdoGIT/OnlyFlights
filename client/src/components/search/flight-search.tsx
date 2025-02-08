@@ -22,12 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, PlaneTakeoff, Check, Filter, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, PlaneTakeoff, Check, Filter, Loader2, XCircle, SearchX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { popularCities } from "@/data/flights";
 import { FlightCard } from "@/components/flight-card";
 import type { Flight } from "@/types/flight";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function FlightSearch() {
   const [tripType, setTripType] = useState("round");
@@ -42,6 +42,7 @@ export function FlightSearch() {
   const [maxStops, setMaxStops] = useState<string>("any");
   const [showFilters, setShowFilters] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: flights = [], isLoading, isError } = useQuery<Flight[]>({
     queryKey: ['/api/flights'],
@@ -63,30 +64,35 @@ export function FlightSearch() {
   }, [maxPrice, flights]);
 
   const validateSearch = () => {
+    let errors: string[] = [];
+
     if (!from) {
-      setSearchError("Please select a departure city");
-      return false;
+      errors.push("Please select a departure city");
     }
     if (!to) {
-      setSearchError("Please select an arrival city");
-      return false;
+      errors.push("Please select an arrival city");
+    }
+    if (from === to && from !== "") {
+      errors.push("Departure and arrival cities must be different");
     }
     if (!departDate) {
-      setSearchError("Please select a departure date");
-      return false;
+      errors.push("Please select a departure date");
     }
     if (tripType === "round" && !returnDate) {
-      setSearchError("Please select a return date");
-      return false;
+      errors.push("Please select a return date");
     }
-    if (tripType === "round" && returnDate && departDate > returnDate) {
-      setSearchError("Return date must be after departure date");
-      return false;
+    if (tripType === "round" && returnDate && departDate && departDate > returnDate) {
+      errors.push("Return date must be after departure date");
     }
     if (travelers < 1 || travelers > 9) {
-      setSearchError("Number of travelers must be between 1 and 9");
+      errors.push("Number of travelers must be between 1 and 9");
+    }
+
+    if (errors.length > 0) {
+      setSearchError(errors[0]);
       return false;
     }
+
     setSearchError(null);
     return true;
   };
@@ -124,8 +130,9 @@ export function FlightSearch() {
         <CardContent className="p-6">
           <div className="space-y-6">
             {searchError && (
-              <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
-                {searchError}
+              <div className="p-3 text-sm bg-red-50 rounded-md flex items-start gap-2">
+                <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-red-500">{searchError}</p>
               </div>
             )}
 
@@ -323,15 +330,26 @@ export function FlightSearch() {
             {showFilters && (
               <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
                 <div>
-                  <Label>Price Range (${priceRange[0]} - ${priceRange[1]})</Label>
-                  <Slider
-                    min={0}
-                    max={maxPrice || 1000}
-                    step={50}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="mt-2"
-                  />
+                  <Label className="flex justify-between">
+                    <span>Price Range</span>
+                    <span className="text-primary font-medium">
+                      ${priceRange[0]} - ${priceRange[1]}
+                    </span>
+                  </Label>
+                  <div className="pt-2">
+                    <Slider
+                      min={0}
+                      max={maxPrice || 1000}
+                      step={50}
+                      value={priceRange}
+                      onValueChange={setPriceRange}
+                      className="mt-2"
+                    />
+                    <div className="flex justify-between mt-1 text-xs text-gray-500">
+                      <span>${0}</span>
+                      <span>${maxPrice || 1000}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -371,9 +389,9 @@ export function FlightSearch() {
               </div>
             )}
 
-            <Button 
-              className="w-full" 
-              size="lg" 
+            <Button
+              className="w-full"
+              size="lg"
               onClick={handleSearch}
               disabled={isLoading}
             >
@@ -400,7 +418,20 @@ export function FlightSearch() {
             {isLoading ? (
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : isError ? (
-              <p className="text-sm text-red-500">Error fetching flights.</p>
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <div className="text-red-500 flex flex-col items-center gap-2">
+                    <XCircle className="h-8 w-8" />
+                    <p>Error fetching flights. Please try again later.</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/flights'] })}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
               <p className="text-sm text-gray-500">
                 {searchResults.length} {searchResults.length === 1 ? 'flight' : 'flights'} found
@@ -413,15 +444,38 @@ export function FlightSearch() {
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-6">
-                    <div className="h-24 bg-gray-200 rounded-md" />
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="h-6 bg-gray-200 rounded w-32"></div>
+                      <div className="h-8 bg-gray-200 rounded w-24"></div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 bg-gray-200 rounded w-20"></div>
+                        <div className="h-4 bg-gray-200 rounded w-20"></div>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded w-full"></div>
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 bg-gray-200 rounded w-24"></div>
+                        <div className="h-8 bg-gray-200 rounded w-24"></div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : isError ? (
             <Card>
-              <CardContent className="p-6 text-center text-red-500">
-                Error fetching flights. Please try again later.
+              <CardContent className="p-6 text-center">
+                <div className="text-red-500 flex flex-col items-center gap-2">
+                  <XCircle className="h-8 w-8" />
+                  <p>Error fetching flights. Please try again later.</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/flights'] })}
+                  >
+                    Retry
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : searchResults.length > 0 ? (
@@ -433,9 +487,12 @@ export function FlightSearch() {
             ))
           ) : (
             <Card>
-              <CardContent className="p-6 text-center text-gray-500">
-                No flights found matching your search criteria.
-                Try adjusting your filters or search parameters.
+              <CardContent className="p-6">
+                <div className="text-center text-gray-500 flex flex-col items-center gap-2">
+                  <SearchX className="h-8 w-8" />
+                  <p>No flights found matching your search criteria.</p>
+                  <p className="text-sm">Try adjusting your filters or search parameters.</p>
+                </div>
               </CardContent>
             </Card>
           )}
