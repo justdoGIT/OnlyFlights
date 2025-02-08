@@ -16,7 +16,6 @@ declare global {
 }
 
 const scryptAsync = promisify(scrypt);
-const PostgresSessionStore = connectPg(session);
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -25,16 +24,24 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
-  const sessionStore = new PostgresSessionStore({
+  // Create the PostgreSQL session store
+  const PostgresStore = connectPg(session);
+  const sessionStore = new PostgresStore({
     pool,
     createTableIfMissing: true,
+    tableName: 'session'
   });
 
   const sessionSettings: session.SessionOptions = {
@@ -108,16 +115,12 @@ export function setupAuth(app: Express) {
       // Hash password
       const hashedPassword = await hashPassword(password);
 
-      // Check if this is the first user to make them admin
-      const existingAdmins = await storage.getAdminUsers();
-      const isFirstUser = existingAdmins.length === 0;
-
-      // Create user with admin privileges if first user
+      // Create user
       const user = await storage.createUser({
         username,
         password: hashedPassword,
         email,
-        isAdmin: isFirstUser,
+        isAdmin: false,
       });
 
       // Log the user in after registration
