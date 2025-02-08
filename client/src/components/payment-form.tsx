@@ -14,10 +14,42 @@ import {
 import { Loader2, CreditCard } from "lucide-react";
 
 const paymentSchema = z.object({
-  cardholderName: z.string().min(1, "Cardholder name is required"),
-  cardNumber: z.string().min(16, "Card number must be 16 digits").max(16),
-  expiryDate: z.string().min(5, "Invalid expiry date").max(5),
-  cvv: z.string().min(3, "CVV must be 3 digits").max(3),
+  cardholderName: z.string().min(1, "Cardholder name is required")
+    .regex(/^[a-zA-Z\s]+$/, "Name can only contain letters and spaces"),
+  cardNumber: z.string()
+    .min(16, "Card number must be 16 digits")
+    .max(16)
+    .regex(/^[0-9]+$/, "Card number must contain only numbers")
+    .refine((num) => {
+      // Basic Luhn algorithm check
+      const digits = num.split('').map(Number);
+      let sum = 0;
+      let isEven = false;
+      for (let i = digits.length - 1; i >= 0; i--) {
+        let d = digits[i];
+        if (isEven) {
+          d *= 2;
+          if (d > 9) d -= 9;
+        }
+        sum += d;
+        isEven = !isEven;
+      }
+      return sum % 10 === 0;
+    }, "Invalid card number"),
+  expiryDate: z.string()
+    .min(5, "Invalid expiry date")
+    .max(5)
+    .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, "Must be in MM/YY format")
+    .refine((date) => {
+      const [month, year] = date.split('/').map(Number);
+      const now = new Date();
+      const expiry = new Date(2000 + year, month - 1);
+      return expiry > now;
+    }, "Card has expired"),
+  cvv: z.string()
+    .min(3, "CVV must be 3 digits")
+    .max(3)
+    .regex(/^[0-9]+$/, "CVV must contain only numbers"),
 });
 
 export type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -42,7 +74,7 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-6">
         <div className="flex items-center gap-2 text-primary mb-4">
           <CreditCard className="h-5 w-5" />
           <h2 className="font-semibold">Payment Details</h2>
@@ -58,6 +90,7 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
                 <Input 
                   placeholder="John Doe"
                   {...field}
+                  disabled={isSubmitting}
                 />
               </FormControl>
               <FormMessage />
@@ -73,16 +106,17 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
               <FormLabel>Card Number</FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="1234 5678 9012 4242"
+                  placeholder="4242 4242 4242 4242"
                   maxLength={16}
                   type="text"
                   inputMode="numeric"
                   autoComplete="cc-number"
+                  disabled={isSubmitting}
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, '');
                     field.onChange(value);
                   }}
-                  value={field.value}
+                  value={field.value.replace(/(\d{4})(?=\d)/g, '$1 ')}
                 />
               </FormControl>
               <FormMessage />
@@ -104,6 +138,7 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
                     type="text"
                     inputMode="numeric"
                     autoComplete="cc-exp"
+                    disabled={isSubmitting}
                     onChange={(e) => {
                       let value = e.target.value.replace(/\D/g, '');
                       if (value.length >= 2) {
@@ -132,6 +167,7 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
                     type="password"
                     inputMode="numeric"
                     autoComplete="cc-csc"
+                    disabled={isSubmitting}
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, '');
                       field.onChange(value);
@@ -146,11 +182,18 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
         </div>
 
         {totalTravelers > 1 && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">Price breakdown:</p>
-            <p className="text-sm text-gray-600">
-              ${amount/totalTravelers} × {totalTravelers} travelers = ${amount}
-            </p>
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-2">
+            <p className="text-sm text-gray-600 font-medium">Price breakdown:</p>
+            <div className="text-sm text-gray-600">
+              <div className="flex justify-between">
+                <span>Per traveler:</span>
+                <span>${(amount/totalTravelers).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-medium border-t mt-1 pt-1">
+                <span>Total ({totalTravelers} travelers):</span>
+                <span>${amount.toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -162,15 +205,15 @@ export function PaymentForm({ amount, totalTravelers = 1, onSubmit, isSubmitting
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              Processing payment...
             </>
           ) : (
-            `Pay $${amount}`
+            `Pay $${amount.toFixed(2)}`
           )}
         </Button>
 
         <p className="text-sm text-gray-500 text-center mt-4">
-          For testing, use a card number ending in 4242
+          For testing, use card number 4242 4242 4242 4242 with any future expiry date and CVV
         </p>
       </form>
     </Form>

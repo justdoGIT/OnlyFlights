@@ -57,25 +57,43 @@ export function registerRoutes(app: Express): Server {
 
   app.post('/api/bookings', isAuthenticated, async (req, res) => {
     try {
-      const booking = insertBookingSchema.parse(req.body);
+      const booking = insertBookingSchema.parse({
+        ...req.body,
+        userId: req.user!.id // Ensure userId is set from the authenticated user
+      });
+
+      // Validate booking type
+      if (!['flight', 'hotel'].includes(booking.type)) {
+        return res.status(400).json({ message: 'Invalid booking type' });
+      }
+
+      // Create the booking
       const result = await storage.createBooking(booking);
 
       // Send confirmation email
-      const emailTo = req.user!.email;
       try {
+        const emailHtml = await generateBookingConfirmationEmail(result);
         await sendEmail({
-          to: emailTo,
+          to: req.user!.email,
           subject: 'Your OnlyFlights Booking Confirmation',
-          html: await generateBookingConfirmationEmail(result)
+          html: emailHtml
         });
       } catch (emailError) {
         console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the booking if email fails
+        // But log it for monitoring
       }
 
       res.json(result);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ message: err.errors[0].message });
+        res.status(400).json({ 
+          message: 'Validation error', 
+          errors: err.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        });
       } else {
         console.error('Booking creation error:', err);
         res.status(500).json({ message: 'Internal server error' });

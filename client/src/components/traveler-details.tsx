@@ -16,8 +16,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const travelerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  passportNumber: z.string().min(1, "Passport number is required"),
+  dateOfBirth: z.string()
+    .min(1, "Date of birth is required")
+    .refine((date) => {
+      const birthDate = new Date(date);
+      const today = new Date();
+      return birthDate < today;
+    }, "Date of birth must be in the past"),
+  passportNumber: z.string()
+    .min(1, "Passport number is required")
+    .regex(/^[A-Z0-9]+$/, "Passport number must contain only uppercase letters and numbers")
+    .min(6, "Passport number must be at least 6 characters")
+    .max(15, "Passport number must not exceed 15 characters"),
 });
 
 const travelersFormSchema = z.object({

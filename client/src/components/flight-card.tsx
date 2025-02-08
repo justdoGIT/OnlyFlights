@@ -78,7 +78,9 @@ export function FlightCard({ flight }: FlightCardProps) {
               </>
             )}
           </div>
-          <Button onClick={handleBooking}>Book Now</Button>
+          <Button onClick={handleBooking}>
+            Book Now
+          </Button>
         </div>
       </CardContent>
     </Card>

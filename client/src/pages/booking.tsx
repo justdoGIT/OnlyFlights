@@ -19,6 +19,10 @@ interface BookingData {
   totalPrice: number;
   details: string;
   status: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
   travelers: Array<{
     firstName: string;
     lastName: string;
@@ -58,6 +62,10 @@ export default function Booking() {
       endDate: details.arrivalTime,
       totalPrice: details.price * (details.travelers || 1),
       status: 'pending',
+      firstName: '',
+      lastName: '',
+      email: user?.email || '',
+      phone: '',
       details: JSON.stringify({
         from: details.from,
         to: details.to,
@@ -68,14 +76,18 @@ export default function Booking() {
       }),
       travelers: []
     });
-  }, [navigate]);
+  }, [navigate, user]);
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: BookingData) => {
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          firstName: data.travelers[0].firstName,
+          lastName: data.travelers[0].lastName,
+        })
       });
 
       if (!response.ok) {
@@ -120,7 +132,9 @@ export default function Booking() {
             onSubmit={(data) => {
               setBookingData((prev) => prev ? {
                 ...prev,
-                travelers: data.travelers
+                travelers: data.travelers,
+                firstName: data.travelers[0].firstName,
+                lastName: data.travelers[0].lastName
               } : null);
               setStep(2);
             }}
